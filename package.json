@@ -1,0 +1,10 @@
+{
+  "name": "artspinner",
+  "version": "1.0.0",
+  "description": "Slot-machine art prompt generator with AI image generation",
+  "scripts": {
+    "start": "npx serve . -l 3000"
+  },
+  "keywords": ["art", "slot-machine", "generative", "ai"],
+  "license": "MIT"
+}

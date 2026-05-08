@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Art Spinner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Oswald:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #d4af37;
+      --gold-light: #f5d87a;
+      --gold-dark: #8b6914;
+      --bg: #080510;
+      --machine-bg: #0f0720;
+      --reel-bg: #040210;
+      --text: #f0e8d0;
+      --item-h: 48px;
+    }
+
+    body {
+      background: var(--bg);
+      background-image: radial-gradient(ellipse 90% 50% at 50% 0%, #1e0840 0%, #080510 65%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2.5rem 1rem 6rem;
+      font-family: 'Oswald', sans-serif;
+      color: var(--text);
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.2rem, 6vw, 4rem);
+      color: var(--gold);
+      text-shadow: 0 0 40px rgba(212,175,55,0.5);
+      letter-spacing: 0.05em;
+    }
+    header p {
+      font-size: 0.75rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      opacity: 0.45;
+      margin-top: 0.5rem;
+    }
+
+    /* ── Machine Layout ── */
+    .machine-wrapper {
+      display: flex;
+      align-items: center;
+      position: relative;
+    }
+
+    .machine {
+      background: linear-gradient(170deg, #1a0c32 0%, #0b0520 100%);
+      border-radius: 24px 24px 36px 36px;
+      padding: 1.4rem 1.4rem 1.8rem;
+      position: relative;
+      box-shadow:
+        0 0 0 3px var(--gold-dark),
+        0 0 0 5px var(--gold),
+        0 0 0 7px var(--gold-dark),
+        0 35px 80px rgba(0,0,0,0.95),
+        inset 0 1px 0 rgba(255,255,255,0.07);
+      min-width: min(650px, calc(100vw - 90px));
+    }
+
+    /* ── LED Bars ── */
+    .lights-bar {
+      display: flex;
+      justify-content: center;
+      gap: 7px;
+      margin-bottom: 1.2rem;
+    }
+    .lights-bar.bottom { margin-bottom: 0; margin-top: 1.2rem; }
+    .bulb {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      transition: box-shadow 0.15s, opacity 0.15s;
+    }
+    .bulb.red  { background: #cc2200; }
+    .bulb.gold { background: var(--gold); }
+    .bulb.on.red  { box-shadow: 0 0 8px 3px #cc2200; }
+    .bulb.on.gold { box-shadow: 0 0 8px 3px var(--gold); }
+    .bulb.dim { opacity: 0.15; box-shadow: none; }
+
+    /* ── Reels Frame ── */
+    .reels-frame {
+      background: #000;
+      border-radius: 10px;
+      border: 3px solid #1a0e00;
+      box-shadow: inset 0 0 50px rgba(0,0,0,0.9);
+      display: flex;
+      overflow: hidden;
+    }
+
+    .reel-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0.6rem 0.4rem 0.8rem;
+    }
+    .reel-col + .reel-col { border-left: 2px solid #1a0e00; }
+
+    .reel-label {
+      font-size: 0.58rem;
+      letter-spacing: 0.2em;
+      color: var(--gold-dark);
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+      white-space: nowrap;
+    }
+
+    /* Window: shows 5 × 48px = 240px */
+    .reel-window {
+      width: 100%;
+      height: 240px;
+      overflow: hidden;
+      position: relative;
+      border-radius: 4px;
+    }
+    /* Fade gradient top/bottom */
+    .reel-window::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        180deg,
+        rgba(0,0,0,0.88) 0%,
+        rgba(0,0,0,0.35) 22%,
+        transparent 38%,
+        transparent 62%,
+        rgba(0,0,0,0.35) 78%,
+        rgba(0,0,0,0.88) 100%
+      );
+      z-index: 2;
+      pointer-events: none;
+    }
+    /* Center selection bracket */
+    .reel-window::after {
+      content: '';
+      position: absolute;
+      left: 4px; right: 4px;
+      top: calc(50% - 24px);   /* 120 - 24 = 96px = 2 × 48px */
+      height: 48px;
+      border-top: 1px solid rgba(212,175,55,0.6);
+      border-bottom: 1px solid rgba(212,175,55,0.6);
+      z-index: 3;
+      pointer-events: none;
+      transition: border-color 0.4s, box-shadow 0.4s;
+    }
+
+    .reel-strip {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+    }
+
+    .reel-item {
+      height: var(--item-h);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.72rem;
+      text-align: center;
+      padding: 0 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: rgba(255,255,255,0.22);
+      line-height: 1.2;
+      transition: color 0.1s;
+    }
+    .reel-item.adj  { color: rgba(255,255,255,0.55); }
+    .reel-item.center {
+      color: #fff;
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    /* Spinning state */
+    .reel-col.spinning .reel-window { filter: blur(0.8px); }
+    .reel-col.spinning .reel-window::after { display: none; }
+    .reel-col.spinning .reel-item { transition: none; }
+
+    /* Locked state */
+    .reel-col.locked .reel-window::after {
+      border-color: var(--gold-light);
+      box-shadow:
+        0 0 16px rgba(245,216,122,0.4),
+        inset 0 0 16px rgba(245,216,122,0.06);
+      animation: win-glow 0.9s ease-in-out 3;
+    }
+    .reel-col.locked .reel-item.center {
+      color: var(--gold-light);
+      text-shadow: 0 0 18px rgba(245,216,122,0.8);
+    }
+    @keyframes win-glow {
+      0%, 100% { box-shadow: 0 0 8px rgba(245,216,122,0.2); }
+      50%       { box-shadow: 0 0 28px rgba(245,216,122,0.6); }
+    }
+
+    /* ── Machine Footer Details ── */
+    .machine-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 0.5rem;
+    }
+    .brand { font-size: 0.6rem; letter-spacing: 0.25em; color: var(--gold-dark); }
+    .coin-slot {
+      width: 44px; height: 7px;
+      background: #000;
+      border-radius: 4px;
+      border: 1px solid #2a1a00;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.8);
+    }
+
+    /* ── Lever ── */
+    .lever-wrap {
+      position: absolute;
+      right: -68px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .lever-base-top, .lever-base-bot {
+      width: 30px; height: 10px;
+      background: linear-gradient(180deg, #555, #222);
+      border-radius: 5px;
+    }
+    .lever-base-bot { margin-top: 2px; }
+    .lever-track {
+      width: 10px; height: 130px;
+      background: linear-gradient(90deg, #1e1e1e, #444, #1e1e1e);
+      border-radius: 5px;
+      margin: 2px auto;
+      position: relative;
+    }
+    .lever-arm {
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      transform-origin: top center;
+      transform: translateX(-50%);
+      transition: transform 0.38s cubic-bezier(0.22, 0.61, 0.36, 1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .lever-arm.pulled { transform: translateX(-50%) rotate(38deg); }
+    .lever-shaft {
+      width: 7px; height: 108px;
+      background: linear-gradient(90deg, #888, #eee, #888);
+      border-radius: 3.5px;
+    }
+    .lever-ball {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 33% 28%, #ff7777, #8b0000);
+      box-shadow: 0 4px 14px rgba(200,0,0,0.55), 0 0 0 2px #550000;
+      margin-top: 3px;
+      margin-left: -13.5px;
+    }
+    .lever-label {
+      font-size: 0.52rem;
+      letter-spacing: 0.18em;
+      color: var(--gold-dark);
+      text-transform: uppercase;
+      margin-top: 6px;
+      text-align: center;
+    }
+
+    /* Lever hover/active */
+    .lever-wrap:hover .lever-ball {
+      box-shadow: 0 4px 20px rgba(220,0,0,0.75), 0 0 0 2px #770000;
+    }
+    .lever-wrap.disabled { cursor: not-allowed; opacity: 0.6; }
+
+    /* ── Result Section ── */
+    .result-section {
+      margin-top: 2.5rem;
+      text-align: center;
+      max-width: 660px;
+      width: 100%;
+      padding: 0 1rem;
+    }
+    .prompt-text {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1rem, 2.8vw, 1.45rem);
+      line-height: 1.75;
+      color: var(--text);
+      min-height: 3.5em;
+      transition: opacity 0.4s;
+    }
+    .prompt-text.dim { opacity: 0.35; }
+    .prompt-text .hi { color: var(--gold-light); font-style: italic; }
+
+    .generate-btn {
+      margin-top: 1.6rem;
+      padding: 0.7rem 2.4rem;
+      background: linear-gradient(130deg, #7a5900, var(--gold), #7a5900);
+      color: #1a0a00;
+      border: none;
+      border-radius: 50px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 4px 24px rgba(212,175,55,0.3);
+      transition: opacity 0.25s, transform 0.1s, box-shadow 0.25s;
+      display: none;
+    }
+    .generate-btn.visible { display: inline-block; }
+    .generate-btn:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(212,175,55,0.45);
+    }
+    .generate-btn:active { transform: translateY(0); }
+    .generate-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    /* ── Image Section ── */
+    .image-section {
+      margin-top: 2.5rem;
+      width: 100%;
+      max-width: 660px;
+      padding: 0 1rem;
+      display: none;
+    }
+    .image-frame {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      background: #030112;
+      border-radius: 12px;
+      border: 3px solid var(--gold-dark);
+      overflow: hidden;
+      box-shadow: 0 24px 70px rgba(0,0,0,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .image-frame img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .image-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      color: var(--gold-dark);
+      text-align: center;
+      padding: 2rem;
+    }
+    .image-placeholder svg { opacity: 0.25; }
+    .image-placeholder p {
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      opacity: 0.55;
+    }
+    .loading-ring {
+      width: 52px; height: 52px;
+      border: 3px solid rgba(212,175,55,0.15);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .image-caption {
+      margin-top: 0.8rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.07em;
+      color: rgba(212,175,55,0.5);
+      text-align: center;
+      font-style: italic;
+      font-family: 'Playfair Display', serif;
+      display: none;
+    }
+    .image-caption.visible { display: block; }
+
+    /* ── Error toast ── */
+    .toast {
+      position: fixed;
+      bottom: 2rem; left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #2a0a00;
+      border: 1px solid #cc2200;
+      color: #ff8888;
+      padding: 0.6rem 1.4rem;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      letter-spacing: 0.05em;
+      transition: transform 0.3s ease;
+      z-index: 999;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .machine { min-width: unset; width: 100%; padding: 1rem 0.8rem 1.4rem; }
+      .machine-wrapper { width: 100%; }
+      .lever-wrap { right: -52px; }
+      .lever-track { height: 90px; }
+      .lever-shaft { height: 74px; }
+      .reel-window { height: 192px; } /* 4 × 48 */
+      .reel-window::after { top: calc(50% - 24px); height: 48px; }
+      .reel-label { font-size: 0.52rem; }
+      .reel-item { font-size: 0.65rem; }
+      .reel-item.center { font-size: 0.78rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Art Spinner</h1>
+  <p>Pull the lever &mdash; let fate choose your masterpiece</p>
+</header>
+
+<div class="machine-wrapper">
+  <div class="machine" id="machine">
+    <div class="lights-bar" id="lights-top"></div>
+
+    <div class="reels-frame">
+      <div class="reel-col" id="reel-0">
+        <div class="reel-label">Visual Medium</div>
+        <div class="reel-window"><div class="reel-strip" id="strip-0"></div></div>
+      </div>
+      <div class="reel-col" id="reel-1">
+        <div class="reel-label">Inspired By</div>
+        <div class="reel-window"><div class="reel-strip" id="strip-1"></div></div>
+      </div>
+      <div class="reel-col" id="reel-2">
+        <div class="reel-label">In the Style of</div>
+        <div class="reel-window"><div class="reel-strip" id="strip-2"></div></div>
+      </div>
+    </div>
+
+    <div class="lights-bar bottom" id="lights-bot"></div>
+
+    <div class="machine-footer">
+      <span class="brand">Art Spinner&trade;</span>
+      <div class="coin-slot"></div>
+      <span class="brand">Est. 2025</span>
+    </div>
+  </div>
+
+  <div class="lever-wrap" id="lever-wrap">
+    <div class="lever-base-top"></div>
+    <div class="lever-track">
+      <div class="lever-arm" id="lever-arm">
+        <div class="lever-shaft"></div>
+        <div class="lever-ball"></div>
+      </div>
+    </div>
+    <div class="lever-base-bot"></div>
+    <div class="lever-label">Pull!</div>
+  </div>
+</div>
+
+<div class="result-section">
+  <div class="prompt-text dim" id="prompt-text">
+    Pull the lever to spin your fate&hellip;
+  </div>
+  <button class="generate-btn" id="gen-btn">&#10024; Generate Image</button>
+</div>
+
+<div class="image-section" id="img-section">
+  <div class="image-frame" id="img-frame">
+    <div class="image-placeholder">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <circle cx="8.5" cy="8.5" r="1.5"/>
+        <path d="M21 15l-5-5L5 21"/>
+      </svg>
+      <p>Click Generate Image to create your artwork</p>
+    </div>
+  </div>
+  <div class="image-caption" id="img-caption"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+/* ──────────────────────────────────────────
+   DATA
+────────────────────────────────────────── */
+const DATA = [
+  // Visual media types
+  [
+    'Oil Painting','Watercolor','Digital Illustration','Photograph',
+    'Charcoal Sketch','Ink Drawing','Mosaic','Stained Glass',
+    'Gouache Painting','Linocut Print','Screen Print','Acrylic Painting',
+    'Pastel Drawing','Collage','Fresco','Woodblock Print',
+    'Spray Paint Mural','Pencil Sketch','Tapestry','Sculpture'
+  ],
+  // Artistic influencers
+  [
+    'Claude Monet','Vincent van Gogh','Frida Kahlo','Pablo Picasso',
+    'Salvador Dalí','Georgia O\'Keeffe','Banksy','Jean-Michel Basquiat',
+    'Andy Warhol','Katsushika Hokusai','Gustav Klimt','Rembrandt van Rijn',
+    'Leonardo da Vinci','Jackson Pollock','Yayoi Kusama','Edward Hopper',
+    'Wassily Kandinsky','Henri Matisse','René Magritte','Alphonse Mucha'
+  ],
+  // Artistic styles
+  [
+    'Impressionism','Cubism','Surrealism','Abstract Expressionism',
+    'Art Nouveau','Baroque','Pop Art','Minimalism','Romanticism',
+    'Pointillism','Fauvism','Dadaism','Constructivism','Expressionism',
+    'Post-Impressionism','Futurism','Gothic','Vaporwave','Psychedelic',
+    'Street Art'
+  ]
+];
+
+/* Spin durations: each reel spins for a different length */
+const SPIN_DURATIONS = [2000, 2700, 3500];
+
+const ITEM_H = 48;   // px
+const VISIBLE = 5;   // items shown in window
+const CENTER  = 2;   // index of center row (0-based)
+
+/* ──────────────────────────────────────────
+   REEL CLASS
+────────────────────────────────────────── */
+class Reel {
+  constructor(colId, items) {
+    this.col   = document.getElementById(colId);
+    this.strip = document.getElementById(colId.replace('reel', 'strip'));
+    this.items = items;
+    this.N     = items.length;
+    this.idx   = Math.floor(Math.random() * this.N);
+    this.spinning = false;
+    this.locked   = false;
+
+    this._buildEls();
+    this._render();
+  }
+
+  _buildEls() {
+    this.strip.innerHTML = '';
+    this.els = Array.from({ length: VISIBLE }, () => {
+      const el = document.createElement('div');
+      el.className = 'reel-item';
+      this.strip.appendChild(el);
+      return el;
+    });
+  }
+
+  _itemAt(offset) {
+    return this.items[((this.idx + offset) % this.N + this.N) % this.N];
+  }
+
+  _render() {
+    for (let i = 0; i < VISIBLE; i++) {
+      const off = i - CENTER;
+      this.els[i].textContent = this._itemAt(off);
+      this.els[i].className   = 'reel-item' +
+        (off === 0 ? ' center' : Math.abs(off) === 1 ? ' adj' : '');
+    }
+  }
+
+  getValue() { return this.items[this.idx]; }
+
+  spin(duration, targetIdx, onStop) {
+    if (this.spinning) return;
+    this.spinning = true;
+    this.locked   = false;
+    this.col.classList.remove('locked');
+    this.col.classList.add('spinning');
+
+    const end = Date.now() + duration;
+
+    const fast = () => {
+      this.idx = (this.idx + 1) % this.N;
+      this._render();
+      if (Date.now() < end) {
+        setTimeout(fast, 55);
+      } else {
+        this.col.classList.remove('spinning');
+        this._slowDown(targetIdx, onStop);
+      }
+    };
+    fast();
+  }
+
+  _slowDown(targetIdx, onStop) {
+    let steps = (targetIdx - this.idx + this.N) % this.N;
+    if (steps < 4) steps += this.N; // guarantee a few visible ticks
+
+    let step = 0;
+    const tick = () => {
+      this.idx = (this.idx + 1) % this.N;
+      this._render();
+      step++;
+
+      if (step >= steps) {
+        this.spinning = false;
+        this.locked   = true;
+        this.col.classList.add('locked');
+        onStop && onStop(this.items[this.idx]);
+        return;
+      }
+
+      // Quadratic ease-out: 80 ms → 650 ms
+      const p     = step / steps;
+      const delay = 80 + p * p * 570;
+      setTimeout(tick, delay);
+    };
+    tick();
+  }
+}
+
+/* ──────────────────────────────────────────
+   LED LIGHTS
+────────────────────────────────────────── */
+function buildLights(id, count = 22) {
+  const bar = document.getElementById(id);
+  for (let i = 0; i < count; i++) {
+    const b = document.createElement('div');
+    b.className = `bulb ${i % 2 === 0 ? 'gold' : 'red'} on`;
+    bar.appendChild(b);
+  }
+}
+
+let lightTimer = null;
+
+function setLightsAnimating(on) {
+  clearInterval(lightTimer);
+  const all = document.querySelectorAll('.bulb');
+
+  if (!on) {
+    all.forEach(b => { b.classList.remove('dim'); });
+    return;
+  }
+
+  let frame = 0;
+  lightTimer = setInterval(() => {
+    frame++;
+    all.forEach((b, i) => {
+      if ((i + frame) % 2 === 0) { b.classList.remove('dim'); }
+      else                        { b.classList.add('dim');    }
+    });
+  }, 110);
+}
+
+/* ──────────────────────────────────────────
+   TOAST
+────────────────────────────────────────── */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+/* ──────────────────────────────────────────
+   MACHINE STATE
+────────────────────────────────────────── */
+let reels      = [];
+let isSpinning = false;
+let results    = [null, null, null];
+
+function init() {
+  buildLights('lights-top');
+  buildLights('lights-bot');
+  setLightsAnimating(false);
+
+  reels = DATA.map((items, i) => new Reel(`reel-${i}`, items));
+
+  document.getElementById('lever-wrap').addEventListener('click', handleLever);
+  document.getElementById('gen-btn').addEventListener('click', generateImage);
+}
+
+function handleLever() {
+  if (isSpinning) return;
+  startSpin();
+}
+
+function startSpin() {
+  isSpinning = true;
+  results    = [null, null, null];
+
+  const promptEl = document.getElementById('prompt-text');
+  promptEl.classList.add('dim');
+  promptEl.textContent = 'Spinning…';
+
+  document.getElementById('gen-btn').classList.remove('visible');
+  document.getElementById('img-section').style.display = 'none';
+  document.getElementById('img-caption').classList.remove('visible');
+
+  // Pull lever animation
+  const arm = document.getElementById('lever-arm');
+  arm.classList.add('pulled');
+  setTimeout(() => arm.classList.remove('pulled'), 480);
+
+  const leverWrap = document.getElementById('lever-wrap');
+  leverWrap.classList.add('disabled');
+
+  setLightsAnimating(true);
+
+  const targets = DATA.map(d => Math.floor(Math.random() * d.length));
+  let stopped = 0;
+
+  reels.forEach((reel, i) => {
+    reel.spin(SPIN_DURATIONS[i], targets[i], value => {
+      results[i] = value;
+      if (++stopped === 3) onAllStopped();
+    });
+  });
+}
+
+function onAllStopped() {
+  isSpinning = false;
+  setLightsAnimating(false);
+  document.getElementById('lever-wrap').classList.remove('disabled');
+
+  const [media, influence, style] = results;
+  const promptEl = document.getElementById('prompt-text');
+  promptEl.classList.remove('dim');
+  promptEl.innerHTML =
+    `Create a <span class="hi">${esc(media)}</span> inspired by ` +
+    `<span class="hi">${esc(influence)}</span> in the style of ` +
+    `<span class="hi">${esc(style)}</span>.`;
+
+  document.getElementById('gen-btn').classList.add('visible');
+
+  const imgSection = document.getElementById('img-section');
+  imgSection.style.display = 'block';
+  document.getElementById('img-frame').innerHTML = `
+    <div class="image-placeholder">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <circle cx="8.5" cy="8.5" r="1.5"/>
+        <path d="M21 15l-5-5L5 21"/>
+      </svg>
+      <p>Click Generate Image to create your artwork</p>
+    </div>`;
+}
+
+/* ──────────────────────────────────────────
+   IMAGE GENERATION (pollinations.ai — free, no key)
+────────────────────────────────────────── */
+function generateImage() {
+  const [media, influence, style] = results;
+  if (!media) return;
+
+  const btn = document.getElementById('gen-btn');
+  btn.disabled   = true;
+  btn.textContent = 'Generating…';
+
+  const prompt  = `Create a ${media} inspired by ${influence} in the style of ${style}. Highly detailed, artistic masterpiece, beautiful composition, professional quality.`;
+  const seed    = Math.floor(Math.random() * 999999);
+  const url     = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=768&nologo=true&seed=${seed}`;
+
+  document.getElementById('img-frame').innerHTML = `
+    <div class="image-placeholder">
+      <div class="loading-ring"></div>
+      <p>Generating your artwork&hellip;</p>
+    </div>`;
+
+  const img  = new Image();
+  img.onload = () => {
+    const frame = document.getElementById('img-frame');
+    frame.innerHTML = '';
+    frame.appendChild(img);
+
+    const cap = document.getElementById('img-caption');
+    cap.textContent = `“${prompt}”`;
+    cap.classList.add('visible');
+
+    btn.disabled    = false;
+    btn.textContent = '✨ Generate Again';
+  };
+  img.onerror = () => {
+    document.getElementById('img-frame').innerHTML = `
+      <div class="image-placeholder">
+        <p>Generation failed &mdash; please try again</p>
+      </div>`;
+    btn.disabled    = false;
+    btn.textContent = '✨ Generate Image';
+    showToast('Image generation failed. Check your connection and try again.');
+  };
+  img.src = url;
+}
+
+/* XSS-safe text for innerHTML */
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+init();
+</script>
+</body>
+</html>
