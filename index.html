@@ -831,7 +831,7 @@
       <label class="settings-label" for="service-select">Image service</label>
       <select class="settings-select" id="service-select">
         <option value="pollinations">Pollinations AI &mdash; free, no key, FLUX, 1920&times;1080</option>
-        <option value="stablehorde">Stable Horde &mdash; free, no key (slow, 576&times;320)</option>
+        <option value="stablehorde">Stable Horde &mdash; free, no key (slow, upscaled ~2K)</option>
         <option value="huggingface">Hugging Face &mdash; free token, FLUX, 1920&times;1080</option>
         <option value="together">Together AI &mdash; key required, FLUX, 1920&times;1080</option>
       </select>
@@ -1122,7 +1122,7 @@ const SK_UPSCAYL = 'artspinner-upscayl';
 
 const SERVICE_HINTS = {
   pollinations: 'No account or key needed. Powered by FLUX &mdash; results in ~10&ndash;30s at 1920&times;1080. Images are publicly accessible via their URL.',
-  stablehorde:  'No key needed. Community GPU network &mdash; expect 1&ndash;5 min. Output ~576&times;320.',
+  stablehorde:  'No key needed. Community GPU network &mdash; expect 1&ndash;5 min. Generates at 576&times;320 then free RealESRGAN &times;4 upscale to ~2304&times;1280.',
   huggingface:  'Free token from <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener">huggingface.co/settings/tokens</a> &mdash; create a token with <em>Inference</em> access. FLUX.1-schnell at 1920&times;1080.',
   together:     'API key from <a href="https://api.together.xyz/settings/api-keys" target="_blank" rel="noopener">api.together.xyz</a>. FLUX.1-schnell at 1920&times;1080.',
 };
@@ -1309,9 +1309,7 @@ function genPollinations(prompt, myId, setStatus) {
   setStatus('Generating with FLUX…', 'Pollinations AI — please wait');
 
   const url = 'https://image.pollinations.ai/prompt/' +
-    encodeURIComponent(prompt) +
-    '?width=1920&height=1080&seed=' +
-    Math.floor(Math.random() * 2147483647);
+    encodeURIComponent(prompt);
 
   return new Promise((resolve, reject) => {
     const img = document.createElement('img');
@@ -1396,6 +1394,7 @@ async function genStableHorde(prompt, myId, setStatus) {
       prompt,
       params: { width: 576, height: 320, steps: 20, n: 1,
                 sampler_name: 'k_euler_a', cfg_scale: 7 },
+      post_processing: ['RealESRGAN_x4plus'],
       r2: false
     })
   });
