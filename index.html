@@ -1351,11 +1351,15 @@ async function genTogether(prompt, token, myId, setStatus) {
 async function genStableHorde(prompt, myId, setStatus) {
   setStatus('Joining AI queue…', 'Stable Horde community GPUs');
 
+  // Strip leading "Create a"/"Generate a" phrases — they can trip content filters
+  const hordePrompt = prompt.replace(/^(create|generate|make|draw|paint)\s+an?\s+/i, '');
+  const negativePrompt = 'child, children, minor, underage, nude, nudity, nsfw, explicit';
+
   const res = await fetch('https://stablehorde.net/api/v2/generate/async', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'apikey': '0000000000' },
     body: JSON.stringify({
-      prompt,
+      prompt: `${hordePrompt} ### ${negativePrompt}`,
       params: { width: 576, height: 320, steps: 20, n: 1,
                 sampler_name: 'k_euler_a', cfg_scale: 7 },
       r2: false
@@ -1371,14 +1375,16 @@ async function genStableHorde(prompt, myId, setStatus) {
 
     const check = await fetch(`https://stablehorde.net/api/v2/generate/check/${id}`)
       .then(r => r.json());
-    if (check.faulted) throw new Error('Job faulted on Stable Horde');
+    if (check.faulted) throw new Error('Stable Horde could not complete this job — try spinning a new prompt or try again.');
 
     if (check.done) {
       const status = await fetch(`https://stablehorde.net/api/v2/generate/status/${id}`)
         .then(r => r.json());
-      const b64 = status.generations?.[0]?.img;
-      if (!b64) throw new Error('No image in Stable Horde response');
-      return base64ToImg(b64);
+      const gen = status.generations?.[0];
+      if (!gen) throw new Error('No image in Stable Horde response');
+      if (gen.censored) throw new Error('Stable Horde flagged this prompt. Try spinning a new prompt — the content filter can be overly cautious with some art styles.');
+      if (!gen.img) throw new Error('No image in Stable Horde response');
+      return base64ToImg(gen.img);
     }
 
     const parts = [];
