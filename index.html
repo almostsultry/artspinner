@@ -1313,6 +1313,7 @@ function genPollinations(prompt, myId, setStatus) {
 
   return new Promise((resolve, reject) => {
     const img = document.createElement('img');
+    img.referrerPolicy = 'no-referrer';
     img.onload = () => {
       if (genId !== myId) reject(new Error('cancelled'));
       else resolve(img);
