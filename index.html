@@ -529,6 +529,19 @@
     }
     .settings-hint a { color: var(--br-light); text-decoration: none; }
     .settings-hint a:hover { text-decoration: underline; }
+    .settings-check-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+    }
+    .settings-checkbox {
+      width: 14px;
+      height: 14px;
+      accent-color: var(--br-mid);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
 
     /* ══════════════════════════════════════
        IMAGE SECTION — z-index: 2
@@ -639,12 +652,13 @@
     }
     .image-caption.visible { display: block; }
 
-    /* ── Reaction row (👍🏼 / 👎🏼) ── */
+    /* ── Reaction row (👍🏼 / 👎🏼 / Upscayl) ── */
     .reaction-row {
       display: none;
       justify-content: center;
       gap: 1rem;
       margin-top: 0.9rem;
+      align-items: center;
     }
     .reaction-row.visible { display: flex; }
     .reaction-btn {
@@ -680,6 +694,26 @@
         0 0 0 3px var(--br-shadow),
         inset 0 2px 6px rgba(0,0,0,.3),
         0 1px 4px rgba(0,0,0,.4);
+    }
+
+    /* Upscayl button — hidden unless user has Upscayl installed */
+    #upscale-btn {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      font-size: 1rem;
+      padding: 0.3rem 0.75rem 0.4rem;
+    }
+    #upscale-btn.upscayl-on { display: flex; }
+    .upscale-icon { font-size: 1.25rem; line-height: 1; }
+    .upscale-label {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.44rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(20,12,0,.52);
+      line-height: 1;
     }
 
     /* ── Toast ── */
@@ -798,6 +832,18 @@
              placeholder="Paste your token here&hellip;" autocomplete="off">
       <span class="settings-hint" id="service-hint"></span>
     </div>
+    <div class="settings-row">
+      <label class="settings-label settings-check-row" for="upscayl-check">
+        <input type="checkbox" id="upscayl-check" class="settings-checkbox">
+        Upscayl is installed on this machine
+      </label>
+      <span class="settings-hint">
+        Reveals an ⬆&nbsp;Upscayl button beneath generated images.
+        Clicking it downloads the image — then open the file in
+        <a href="https://upscayl.org" target="_blank" rel="noopener">Upscayl</a>
+        to upscale to 2K, 4K, or 8K.
+      </span>
+    </div>
   </div>
 </div>
 
@@ -817,6 +863,10 @@
   <div class="reaction-row" id="reaction-row">
     <button class="reaction-btn" id="thumbs-up"   title="Download image">&#128077;&#127996;</button>
     <button class="reaction-btn" id="thumbs-down" title="Generate again">&#128078;&#127996;</button>
+    <button class="reaction-btn" id="upscale-btn" title="Download for Upscayl">
+      <span class="upscale-icon">&#11014;&#65039;</span>
+      <span class="upscale-label">Upscayl</span>
+    </button>
   </div>
 </div>
 
@@ -976,6 +1026,7 @@ function init() {
   document.getElementById('gen-btn').addEventListener('click', generateImage);
   document.getElementById('thumbs-up').addEventListener('click', downloadCurrentImage);
   document.getElementById('thumbs-down').addEventListener('click', generateImage);
+  document.getElementById('upscale-btn').addEventListener('click', upscaleWithUpscayl);
 
   initSettings();
 }
@@ -1032,8 +1083,9 @@ function onAllStopped() {
 /* ──────────────────────────────────────────
    SETTINGS
 ────────────────────────────────────────── */
-const SK_SVC = 'artspinner-service';
-const SK_KEY = 'artspinner-key';
+const SK_SVC     = 'artspinner-service';
+const SK_KEY     = 'artspinner-key';
+const SK_UPSCAYL = 'artspinner-upscayl';
 
 const SERVICE_HINTS = {
   stablehorde: 'No key needed. Community GPU network &mdash; expect 1&ndash;5 min. Output ~576&times;320.',
@@ -1051,6 +1103,10 @@ function initSettings() {
   input.value = localStorage.getItem(SK_KEY) || '';
   applyService(sel.value);
 
+  const upscaylCheck = document.getElementById('upscayl-check');
+  upscaylCheck.checked = localStorage.getItem(SK_UPSCAYL) === '1';
+  applyUpscayl();
+
   toggle.addEventListener('click', () => {
     const open = panel.classList.toggle('open');
     toggle.classList.toggle('active', open);
@@ -1060,6 +1116,16 @@ function initSettings() {
     applyService(sel.value);
   });
   input.addEventListener('input', () => localStorage.setItem(SK_KEY, input.value.trim()));
+  upscaylCheck.addEventListener('change', () => {
+    localStorage.setItem(SK_UPSCAYL, upscaylCheck.checked ? '1' : '0');
+    applyUpscayl();
+  });
+}
+
+function applyUpscayl() {
+  const on  = localStorage.getItem(SK_UPSCAYL) === '1';
+  const btn = document.getElementById('upscale-btn');
+  btn.classList.toggle('upscayl-on', on);
 }
 
 function applyService(svc) {
@@ -1159,14 +1225,28 @@ async function generateImage() {
 /* ── Download current image ── */
 function downloadCurrentImage() {
   if (!currentImgEl) return;
-  const a = document.createElement('a');
-  a.href = currentImgEl.src;
-  const slug = currentPrompt
-    .slice(0, 60)
+  _triggerDownload(`art-spinner-${_promptSlug()}.png`);
+}
+
+/* ── Download for Upscayl ── */
+function upscaleWithUpscayl() {
+  if (!currentImgEl) return;
+  const filename = `art-spinner-${_promptSlug()}.png`;
+  _triggerDownload(filename);
+  showToast(`Saved "${filename}" — open it in Upscayl to upscale.`);
+}
+
+function _promptSlug() {
+  return (currentPrompt.slice(0, 60)
     .replace(/[^a-z0-9]+/gi, '-')
     .toLowerCase()
-    .replace(/^-|-$/g, '');
-  a.download = `art-spinner-${slug || Date.now()}.png`;
+    .replace(/^-|-$/g, '')) || String(Date.now());
+}
+
+function _triggerDownload(filename) {
+  const a = document.createElement('a');
+  a.href = currentImgEl.src;
+  a.download = filename;
   a.style.display = 'none';
   document.body.appendChild(a);
   a.click();
