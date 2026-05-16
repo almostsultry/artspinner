@@ -830,9 +830,10 @@
     <div class="settings-row">
       <label class="settings-label" for="service-select">Image service</label>
       <select class="settings-select" id="service-select">
+        <option value="pollinations">Pollinations AI &mdash; free, no key, FLUX, 1920&times;1080</option>
         <option value="stablehorde">Stable Horde &mdash; free, no key (slow, 576&times;320)</option>
         <option value="huggingface">Hugging Face &mdash; free token, FLUX, 1920&times;1080</option>
-        <option value="together">Together AI &mdash; free key, FLUX, 1920&times;1080</option>
+        <option value="together">Together AI &mdash; key required, FLUX, 1920&times;1080</option>
       </select>
     </div>
     <div class="settings-row" id="key-row" style="display:none">
@@ -1122,9 +1123,10 @@ const SK_KEY     = 'artspinner-key';
 const SK_UPSCAYL = 'artspinner-upscayl';
 
 const SERVICE_HINTS = {
-  stablehorde: 'No key needed. Community GPU network &mdash; expect 1&ndash;5 min. Output ~576&times;320.',
-  huggingface: 'Free token from <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener">huggingface.co/settings/tokens</a> &mdash; create a token with <em>Inference</em> access. FLUX.1-schnell at 1920&times;1080.',
-  together:    'Free key from <a href="https://api.together.xyz/settings/api-keys" target="_blank" rel="noopener">api.together.xyz</a>. FLUX.1-schnell at 1920&times;1080.',
+  pollinations: 'No account or key needed. Powered by FLUX &mdash; results in ~10&ndash;30s at 1920&times;1080. Images are publicly accessible via their URL.',
+  stablehorde:  'No key needed. Community GPU network &mdash; expect 1&ndash;5 min. Output ~576&times;320.',
+  huggingface:  'Free token from <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener">huggingface.co/settings/tokens</a> &mdash; create a token with <em>Inference</em> access. FLUX.1-schnell at 1920&times;1080.',
+  together:     'API key from <a href="https://api.together.xyz/settings/api-keys" target="_blank" rel="noopener">api.together.xyz</a>. FLUX.1-schnell at 1920&times;1080.',
 };
 
 function initSettings() {
@@ -1133,7 +1135,7 @@ function initSettings() {
   const toggle = document.getElementById('settings-toggle');
   const panel  = document.getElementById('settings-panel');
 
-  sel.value   = localStorage.getItem(SK_SVC) || 'stablehorde';
+  sel.value   = localStorage.getItem(SK_SVC) || 'pollinations';
   input.value = localStorage.getItem(SK_KEY) || '';
   applyService(sel.value);
 
@@ -1163,7 +1165,8 @@ function applyUpscayl() {
 }
 
 function applyService(svc) {
-  document.getElementById('key-row').style.display  = svc === 'stablehorde' ? 'none' : '';
+  const noKey = svc === 'stablehorde' || svc === 'pollinations';
+  document.getElementById('key-row').style.display  = noKey ? 'none' : '';
   document.getElementById('service-hint').innerHTML = SERVICE_HINTS[svc] || '';
 }
 
@@ -1177,10 +1180,11 @@ async function generateImage() {
   const [media, influence, style] = results;
   if (!media) return;
 
-  const svc    = localStorage.getItem(SK_SVC) || 'stablehorde';
+  const svc    = localStorage.getItem(SK_SVC) || 'pollinations';
   const apiKey = (localStorage.getItem(SK_KEY) || '').trim();
 
-  if (svc !== 'stablehorde' && !apiKey) {
+  const noKey = svc === 'stablehorde' || svc === 'pollinations';
+  if (!noKey && !apiKey) {
     document.getElementById('settings-panel').classList.add('open');
     document.getElementById('settings-toggle').classList.add('active');
     showToast('Enter your API token in settings first.');
@@ -1243,7 +1247,9 @@ async function generateImage() {
 
   try {
     let imgEl;
-    if (svc === 'huggingface') {
+    if (svc === 'pollinations') {
+      imgEl = await genPollinations(prompt, myId, setStatus);
+    } else if (svc === 'huggingface') {
       imgEl = await genHuggingFace(prompt, apiKey, myId, setStatus);
     } else if (svc === 'together') {
       imgEl = await genTogether(prompt, apiKey, myId, setStatus);
@@ -1285,6 +1291,23 @@ function _triggerDownload(filename) {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+}
+
+/* ── Pollinations AI ── */
+async function genPollinations(prompt, myId, setStatus) {
+  setStatus('Generating with FLUX…', 'Pollinations AI');
+
+  const url = 'https://image.pollinations.ai/prompt/' +
+    encodeURIComponent(prompt) +
+    '?width=1920&height=1080&model=flux&nologo=true&seed=' +
+    Math.floor(Math.random() * 2147483647);
+
+  const res = await fetch(url);
+  if (genId !== myId) return;
+  if (!res.ok) throw new Error(`Pollinations error: HTTP ${res.status}`);
+  const blob = await res.blob();
+  if (!blob.type.startsWith('image/')) throw new Error('Unexpected response from Pollinations AI');
+  return blobToImg(blob);
 }
 
 /* ── Hugging Face ── */
