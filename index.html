@@ -1363,7 +1363,7 @@ async function genStableHorde(prompt, myId, setStatus) {
   const { id } = await res.json();
   if (!id) throw new Error('No job ID from Stable Horde');
 
-  for (let i = 0; i < 72; i++) {
+  for (let i = 0; i < 360; i++) {
     if (genId !== myId) return;
     await sleep(5000);
 
@@ -1380,12 +1380,12 @@ async function genStableHorde(prompt, myId, setStatus) {
     }
 
     const parts = [];
-    if (check.queue_position > 0) parts.push(`queue: ${check.queue_position}`);
-    if (check.wait_time > 0)      parts.push(`~${check.wait_time}s`);
-    setStatus('Generating…', parts.join(' · ') || 'working…');
+    if (check.queue_position > 0) parts.push(`position #${check.queue_position}`);
+    if (check.wait_time > 0)      parts.push(`~${check.wait_time}s remaining`);
+    setStatus('Queued…', parts.join(' · ') || 'waiting for worker…');
   }
 
-  throw new Error('Stable Horde timed out after 6 minutes');
+  throw new Error('Stable Horde timed out after 30 minutes');
 }
 
 function blobToImg(blob) {
