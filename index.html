@@ -378,6 +378,20 @@
       text-transform: uppercase;
       opacity: 0.55;
     }
+    .open-link {
+      display: inline-block;
+      margin-top: 0.25rem;
+      padding: 0.5rem 1.4rem;
+      border: 1px solid var(--gold-dark);
+      border-radius: 50px;
+      color: var(--gold);
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+    }
+    .open-link:hover { background: var(--gold-dark); color: #fff; }
     .loading-ring {
       width: 52px; height: 52px;
       border: 3px solid rgba(212,175,55,0.15);
@@ -765,7 +779,7 @@ function onAllStopped() {
 /* ──────────────────────────────────────────
    IMAGE GENERATION (pollinations.ai — free, no key)
 ────────────────────────────────────────── */
-async function generateImage() {
+function generateImage() {
   const [media, influence, style] = results;
   if (!media) return;
 
@@ -773,11 +787,28 @@ async function generateImage() {
   btn.disabled    = true;
   btn.textContent = 'Generating…';
 
-  const prompt = `Create a ${media} inspired by ${influence} in the style of ${style}. Highly detailed, artistic masterpiece, beautiful composition, professional quality.`;
+  // Concise prompt: verbose “masterpiece” language can trigger content filters
+  const prompt = `${media}, inspired by ${influence}, ${style} style, highly detailed`;
   const seed   = Math.floor(Math.random() * 999999);
-  const url    = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=768&model=flux&seed=${seed}`;
+  // Use <img> loading (no Origin header) to avoid hotlink-protection 403s from fetch()
+  const url    = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=768&seed=${seed}`;
 
   const frame = document.getElementById('img-frame');
+
+  const showFallback = (msg) => {
+    clearInterval(timer);
+    clearTimeout(deadline);
+    frame.innerHTML = `
+      <div class=”image-placeholder”>
+        <p>${msg}</p>
+        <a class=”open-link” href=”${url}” target=”_blank” rel=”noopener noreferrer”>
+          Open in browser ↗
+        </a>
+      </div>`;
+    btn.disabled    = false;
+    btn.textContent = '✨ Try Again';
+  };
+
   let secs = 0;
   const timer = setInterval(() => {
     secs++;
@@ -785,26 +816,24 @@ async function generateImage() {
     if (el) el.textContent = `${secs}s`;
   }, 1000);
 
+  // Hard timeout — generation rarely takes more than 90 s
+  const deadline = setTimeout(() => {
+    img.src = '';
+    showFallback('Timed out after 90s &mdash; try opening in the browser');
+  }, 90000);
+
   frame.innerHTML = `
     <div class=”image-placeholder”>
       <div class=”loading-ring”></div>
       <p>Generating your artwork&hellip; <span class=”loading-secs”>0s</span></p>
     </div>`;
 
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
+  const img = new Image();
 
-    const blob = await res.blob();
-    if (!blob.type.startsWith('image/')) throw new Error('Response was not an image');
-
+  img.onload = () => {
     clearInterval(timer);
-
-    const objUrl = URL.createObjectURL(blob);
+    clearTimeout(deadline);
     frame.innerHTML = '';
-    const img = document.createElement('img');
-    img.onload = () => URL.revokeObjectURL(objUrl);
-    img.src = objUrl;
     frame.appendChild(img);
 
     const cap = document.getElementById('img-caption');
@@ -813,17 +842,13 @@ async function generateImage() {
 
     btn.disabled    = false;
     btn.textContent = '✨ Generate Again';
-  } catch (err) {
-    clearInterval(timer);
-    const msg = err.message || 'Unknown error';
-    frame.innerHTML = `
-      <div class=”image-placeholder”>
-        <p>Generation failed &mdash; ${esc(msg)}</p>
-      </div>`;
-    btn.disabled    = false;
-    btn.textContent = '✨ Generate Image';
-    showToast(`Image generation failed: ${msg}`);
-  }
+  };
+
+  img.onerror = () => {
+    showFallback('Could not load image &mdash; try opening in the browser');
+  };
+
+  img.src = url;
 }
 
 /* XSS-safe text for innerHTML */
