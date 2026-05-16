@@ -25,7 +25,7 @@
       --win-text:  #1a1000;
       --bg:        #0e0e0e;
       --text-page: #ccc4ac;
-      --item-h:    48px;
+      --flap-h:    240px;
     }
 
     body {
@@ -158,91 +158,82 @@
       width: 100%;
     }
 
-    /* ── Reel window ── */
-    .reel-window {
+    /* ── Split-flap cell ── */
+    .flap-cell {
       width: 100%;
-      height: 240px;
-      background: var(--win-bg);
-      overflow: hidden;
+      height: var(--flap-h);
       position: relative;
-      border-radius: 3px;
+      border-radius: 4px;
+      perspective: 500px;
       box-shadow:
         inset 0 4px 18px rgba(0,0,0,0.55),
         inset 0 1px 4px rgba(0,0,0,0.35),
         0 1px 0 rgba(255,225,80,0.14);
     }
-    .reel-window::before {
-      content: '';
+
+    /* Each half is absolutely positioned; overflow:hidden clips text to its half */
+    .flap-half {
       position: absolute;
-      inset: 0;
-      background: linear-gradient(
-        180deg,
-        var(--win-fade)        0%,
-        rgba(237,232,216,.72)  15%,
-        rgba(237,232,216,0)    34%,
-        rgba(237,232,216,0)    66%,
-        rgba(237,232,216,.72)  85%,
-        var(--win-fade)        100%
-      );
-      z-index: 2;
-      pointer-events: none;
-    }
-    .reel-window::after {
-      content: '';
-      position: absolute;
-      left: 5px; right: 5px;
-      top: calc(50% - 24px);
-      height: 48px;
-      border-top: 1px solid rgba(100,70,0,.3);
-      border-bottom: 1px solid rgba(100,70,0,.3);
-      z-index: 3;
-      pointer-events: none;
-      transition: border-color .4s, box-shadow .4s;
+      left: 0; right: 0;
+      height: calc(var(--flap-h) / 2 - 1px);
+      overflow: hidden;
+      background: #0e0a00;
     }
 
-    .reel-strip {
-      position: absolute;
-      top: 0; left: 0; right: 0;
-    }
+    /* Top-anchored halves rotate around their bottom edge */
+    .flap-upper { top: 0; z-index: 1; }
+    .flap-fold  { top: 0; z-index: 2; transform-origin: bottom center; }
 
-    .reel-item {
-      height: var(--item-h);
+    /* Bottom-anchored halves rotate around their top edge */
+    .flap-lower    { bottom: 0; z-index: 1; }
+    .flap-incoming { bottom: 0; z-index: 2; transform-origin: top center;
+                     transform: rotateX(90deg); }
+
+    /* Text spans the full cell height so centering lands on the seam */
+    .flap-text {
+      position: absolute;
+      left: 0; right: 0;
+      height: var(--flap-h);
       display: flex;
       align-items: center;
       justify-content: center;
+      font-family: 'Oswald', sans-serif;
       font-weight: 600;
-      font-size: 0.7rem;
-      text-align: center;
-      padding: 0 6px;
+      font-size: clamp(0.65rem, 1.4vw, 0.88rem);
       text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: rgba(20,12,0,.13);
-      line-height: 1.2;
-      transition: color .1s;
+      letter-spacing: 0.05em;
+      text-align: center;
+      padding: 0 8px;
+      line-height: 1.3;
+      color: #e8dfc0;
     }
-    .reel-item.adj   { color: rgba(20,12,0,.45); }
-    .reel-item.center {
-      color: var(--win-text);
-      font-size: 0.84rem;
-      font-weight: 700;
+    .flap-upper .flap-text,
+    .flap-fold  .flap-text { top: 0; }
+
+    .flap-lower    .flap-text,
+    .flap-incoming .flap-text { bottom: 0; }
+
+    /* Center seam */
+    .flap-divider {
+      position: absolute;
+      left: 0; right: 0;
+      top: calc(50% - 1px);
+      height: 2px;
+      background: #000;
+      z-index: 10;
+      pointer-events: none;
     }
 
-    .reel-col.spinning .reel-window        { filter: blur(0.6px); }
-    .reel-col.spinning .reel-window::after { display: none; }
-    .reel-col.spinning .reel-item          { transition: none; }
-
-    .reel-col.locked .reel-window::after {
-      border-color: rgba(150,110,10,.65);
-      box-shadow:
-        0 0 10px rgba(160,120,16,.22),
-        inset 0 0 10px rgba(160,120,16,.06);
-      animation: win-glow .85s ease-in-out 3;
+    /* Locked glow */
+    .reel-col.locked .flap-cell {
+      animation: flap-win-glow .85s ease-in-out 3;
     }
-    .reel-col.locked .reel-item.center { color: #2a1800; }
-
-    @keyframes win-glow {
-      0%,100% { box-shadow: 0 0 4px rgba(150,110,10,.12); }
-      50%      { box-shadow: 0 0 18px rgba(150,110,10,.38); }
+    @keyframes flap-win-glow {
+      0%,100% { box-shadow: inset 0 4px 18px rgba(0,0,0,.55),
+                             0 0 0 1px rgba(150,110,10,.15); }
+      50%      { box-shadow: inset 0 4px 18px rgba(0,0,0,.55),
+                             0 0 0 1px rgba(150,110,10,.6),
+                             0 0 18px rgba(150,110,10,.28); }
     }
 
     /* ══════════════════════════════════════
@@ -735,12 +726,9 @@
 
     /* ── Responsive ── */
     @media (max-width: 680px) {
+      :root { --flap-h: 192px; }
       .machine { padding: 1.5rem 1rem 1rem; min-width: unset; width: 100%; }
-      .reel-window { height: 192px; }
-      .reel-window::after { top: calc(50% - 24px); height: 48px; }
       .reel-label, .badge-label { font-size: .44rem; }
-      .reel-item   { font-size: .6rem; }
-      .reel-item.center { font-size: .72rem; }
       .plate-badge { width: 82px; }
       .badge-title { font-size: 0.82rem; }
     }
@@ -759,17 +747,35 @@
 
       <div class="reel-col" id="reel-0">
         <div class="reel-label">Visual Medium</div>
-        <div class="reel-window"><div class="reel-strip" id="strip-0"></div></div>
+        <div class="flap-cell">
+          <div class="flap-upper flap-half"><div class="flap-text"></div></div>
+          <div class="flap-lower flap-half"><div class="flap-text"></div></div>
+          <div class="flap-fold  flap-half"><div class="flap-text"></div></div>
+          <div class="flap-incoming flap-half"><div class="flap-text"></div></div>
+          <div class="flap-divider"></div>
+        </div>
       </div>
 
       <div class="reel-col" id="reel-1">
         <div class="reel-label">Inspired By</div>
-        <div class="reel-window"><div class="reel-strip" id="strip-1"></div></div>
+        <div class="flap-cell">
+          <div class="flap-upper flap-half"><div class="flap-text"></div></div>
+          <div class="flap-lower flap-half"><div class="flap-text"></div></div>
+          <div class="flap-fold  flap-half"><div class="flap-text"></div></div>
+          <div class="flap-incoming flap-half"><div class="flap-text"></div></div>
+          <div class="flap-divider"></div>
+        </div>
       </div>
 
       <div class="reel-col" id="reel-2">
         <div class="reel-label">In the Style of</div>
-        <div class="reel-window"><div class="reel-strip" id="strip-2"></div></div>
+        <div class="flap-cell">
+          <div class="flap-upper flap-half"><div class="flap-text"></div></div>
+          <div class="flap-lower flap-half"><div class="flap-text"></div></div>
+          <div class="flap-fold  flap-half"><div class="flap-text"></div></div>
+          <div class="flap-incoming flap-half"><div class="flap-text"></div></div>
+          <div class="flap-divider"></div>
+        </div>
       </div>
 
       <!-- Badge: label + spin zone + settings button -->
@@ -903,50 +909,72 @@ const DATA = [
 ];
 
 const SPIN_DURATIONS = [2000, 2700, 3500];
-const ITEM_H  = 48;
-const VISIBLE = 5;
-const CENTER  = 2;
 
 /* ──────────────────────────────────────────
-   REEL CLASS
+   REEL CLASS  (split-flap animation)
 ────────────────────────────────────────── */
 class Reel {
   constructor(colId, items) {
     this.col   = document.getElementById(colId);
-    this.strip = document.getElementById(colId.replace('reel', 'strip'));
     this.items = items;
     this.N     = items.length;
     this.idx   = Math.floor(Math.random() * this.N);
     this.spinning = false;
     this.locked   = false;
-    this._buildEls();
-    this._render();
-  }
 
-  _buildEls() {
-    this.strip.innerHTML = '';
-    this.els = Array.from({ length: VISIBLE }, () => {
-      const el = document.createElement('div');
-      el.className = 'reel-item';
-      this.strip.appendChild(el);
-      return el;
-    });
-  }
+    const cell = this.col.querySelector('.flap-cell');
+    this._upper = cell.querySelector('.flap-upper .flap-text');
+    this._lower = cell.querySelector('.flap-lower .flap-text');
+    this._fold  = cell.querySelector('.flap-fold');
+    this._foldT = cell.querySelector('.flap-fold .flap-text');
+    this._in    = cell.querySelector('.flap-incoming');
+    this._inT   = cell.querySelector('.flap-incoming .flap-text');
 
-  _itemAt(offset) {
-    return this.items[((this.idx + offset) % this.N + this.N) % this.N];
-  }
-
-  _render() {
-    for (let i = 0; i < VISIBLE; i++) {
-      const off = i - CENTER;
-      this.els[i].textContent = this._itemAt(off);
-      this.els[i].className   = 'reel-item' +
-        (off === 0 ? ' center' : Math.abs(off) === 1 ? ' adj' : '');
-    }
+    const v = this.items[this.idx];
+    this._upper.textContent = v;
+    this._lower.textContent = v;
+    this._foldT.textContent = v;
+    this._inT.textContent   = v;
   }
 
   getValue() { return this.items[this.idx]; }
+
+  /* Single flip from current idx to nextIdx.
+     duration = total ms for the flip; calls onDone when settled. */
+  _flip(nextIdx, duration, onDone) {
+    const next    = this.items[nextIdx];
+    const halfDur = Math.max(28, Math.round(duration / 2));
+
+    // Upper half immediately shows the incoming value (fold hides it until it falls)
+    this._upper.textContent = next;
+
+    // Phase 1 — fold falls (0° → −90°, eases in)
+    this._fold.style.transition = `transform ${halfDur}ms ease-in`;
+    this._fold.style.transform  = 'rotateX(-90deg)';
+
+    setTimeout(() => {
+      // Phase 2 — incoming bottom rises (90° → 0°, eases out)
+      this._inT.textContent = next;
+      this._in.style.transition = `transform ${halfDur}ms ease-out`;
+      this._in.style.transform  = 'rotateX(0deg)';
+
+      setTimeout(() => {
+        // Settle: update the static layers, reset animated ones
+        this.idx = nextIdx;
+        this._lower.textContent = next;
+        this._foldT.textContent = next;
+
+        // Suppress transitions before snapping back (double-rAF avoids flash)
+        this._fold.style.transition = 'none';
+        this._in.style.transition   = 'none';
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          this._fold.style.transform = 'rotateX(0deg)';
+          this._in.style.transform   = 'rotateX(90deg)';
+          onDone && onDone();
+        }));
+      }, halfDur);
+    }, halfDur);
+  }
 
   spin(duration, targetIdx, onStop) {
     if (this.spinning) return;
@@ -955,18 +983,20 @@ class Reel {
     this.col.classList.remove('locked');
     this.col.classList.add('spinning');
 
-    const end  = Date.now() + duration;
-    const fast = () => {
-      this.idx = (this.idx + 1) % this.N;
-      this._render();
-      if (Date.now() < end) {
-        setTimeout(fast, 55);
-      } else {
-        this.col.classList.remove('spinning');
-        this._slowDown(targetIdx, onStop);
-      }
+    const end = Date.now() + duration;
+
+    const fastPhase = () => {
+      this._flip((this.idx + 1) % this.N, 90, () => {
+        if (Date.now() < end) {
+          fastPhase();
+        } else {
+          this.col.classList.remove('spinning');
+          this._slowDown(targetIdx, onStop);
+        }
+      });
     };
-    fast();
+
+    fastPhase();
   }
 
   _slowDown(targetIdx, onStop) {
@@ -975,22 +1005,23 @@ class Reel {
 
     let step = 0;
     const tick = () => {
-      this.idx = (this.idx + 1) % this.N;
-      this._render();
-      step++;
+      const p   = step / steps;
+      const dur = 90 + Math.round(p * p * 530); // 90 ms → 620 ms
 
-      if (step >= steps) {
-        this.spinning = false;
-        this.locked   = true;
-        this.col.classList.add('locked');
-        onStop && onStop(this.items[this.idx]);
-        return;
-      }
-
-      const p     = step / steps;
-      const delay = 80 + p * p * 570;
-      setTimeout(tick, delay);
+      this._flip((this.idx + 1) % this.N, dur, () => {
+        step++;
+        if (step >= steps) {
+          this.spinning = false;
+          this.locked   = true;
+          this.col.classList.remove('spinning');
+          this.col.classList.add('locked');
+          onStop && onStop(this.items[this.idx]);
+        } else {
+          tick();
+        }
+      });
     };
+
     tick();
   }
 }
