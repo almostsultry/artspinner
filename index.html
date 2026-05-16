@@ -830,7 +830,7 @@
     <div class="settings-row">
       <label class="settings-label" for="service-select">Image service</label>
       <select class="settings-select" id="service-select">
-        <option value="stablehorde">Stable Horde &mdash; free, no key (slow, upscaled ~2K)</option>
+        <option value="stablehorde">Stable Horde &mdash; free, no key (slow, 576&times;320)</option>
         <option value="huggingface">Hugging Face &mdash; free token, FLUX, 1920&times;1080</option>
         <option value="together">Together AI &mdash; key required, FLUX, 1920&times;1080</option>
       </select>
@@ -1120,7 +1120,7 @@ const SK_KEY     = 'artspinner-key';
 const SK_UPSCAYL = 'artspinner-upscayl';
 
 const SERVICE_HINTS = {
-  stablehorde:  'No key needed. Community GPU network &mdash; expect 1&ndash;5 min. Generates at 576&times;320 then free RealESRGAN &times;4 upscale to ~2304&times;1280.',
+  stablehorde:  'No key needed. Community GPU network &mdash; expect 1&ndash;15 min depending on queue. Generates at 576&times;320.',
   huggingface:  'Free token from <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener">huggingface.co/settings/tokens</a> &mdash; create a token with <em>Inference</em> access. FLUX.1-schnell at 1920&times;1080.',
   together:     'API key from <a href="https://api.together.xyz/settings/api-keys" target="_blank" rel="noopener">api.together.xyz</a>. FLUX.1-schnell at 1920&times;1080.',
 };
@@ -1355,7 +1355,6 @@ async function genStableHorde(prompt, myId, setStatus) {
       prompt,
       params: { width: 576, height: 320, steps: 20, n: 1,
                 sampler_name: 'k_euler_a', cfg_scale: 7 },
-      post_processing: ['RealESRGAN_x4plus'],
       r2: false
     })
   });
