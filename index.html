@@ -1110,8 +1110,6 @@ function onAllStopped() {
     `<span class="hi">${esc(style)}</span>.`;
 
   document.getElementById('img-section').style.display = 'block';
-
-  // Auto-generate immediately
   generateImage();
 }
 
@@ -1141,7 +1139,7 @@ function initSettings() {
 
   const upscaylCheck = document.getElementById('upscayl-check');
   upscaylCheck.checked = localStorage.getItem(SK_UPSCAYL) === '1';
-  applyUpscayl();
+  applyUpscayl(upscaylCheck.checked);
 
   toggle.addEventListener('click', () => {
     const open = panel.classList.toggle('open');
@@ -1154,19 +1152,20 @@ function initSettings() {
   input.addEventListener('input', () => localStorage.setItem(SK_KEY, input.value.trim()));
   upscaylCheck.addEventListener('change', () => {
     localStorage.setItem(SK_UPSCAYL, upscaylCheck.checked ? '1' : '0');
-    applyUpscayl();
+    applyUpscayl(upscaylCheck.checked);
   });
 }
 
-function applyUpscayl() {
-  const on  = localStorage.getItem(SK_UPSCAYL) === '1';
-  const btn = document.getElementById('upscale-btn');
-  btn.classList.toggle('upscayl-on', on);
+function isKeylessService(svc) {
+  return svc === 'stablehorde' || svc === 'pollinations';
+}
+
+function applyUpscayl(on) {
+  document.getElementById('upscale-btn').classList.toggle('upscayl-on', on);
 }
 
 function applyService(svc) {
-  const noKey = svc === 'stablehorde' || svc === 'pollinations';
-  document.getElementById('key-row').style.display  = noKey ? 'none' : '';
+  document.getElementById('key-row').style.display  = isKeylessService(svc) ? 'none' : '';
   document.getElementById('service-hint').innerHTML = SERVICE_HINTS[svc] || '';
 }
 
@@ -1183,8 +1182,7 @@ async function generateImage() {
   const svc    = localStorage.getItem(SK_SVC) || 'pollinations';
   const apiKey = (localStorage.getItem(SK_KEY) || '').trim();
 
-  const noKey = svc === 'stablehorde' || svc === 'pollinations';
-  if (!noKey && !apiKey) {
+  if (!isKeylessService(svc) && !apiKey) {
     document.getElementById('settings-panel').classList.add('open');
     document.getElementById('settings-toggle').classList.add('active');
     showToast('Enter your API token in settings first.');
@@ -1262,17 +1260,15 @@ async function generateImage() {
   }
 }
 
-/* ── Download current image ── */
 function downloadCurrentImage() {
   if (!currentImgEl) return;
   _triggerDownload(`art-spinner-${_promptSlug()}.png`);
 }
 
-/* ── Download for Upscayl ── */
-function upscaleWithUpscayl() {
+async function upscaleWithUpscayl() {
   if (!currentImgEl) return;
   const filename = `art-spinner-${_promptSlug()}.png`;
-  _triggerDownload(filename);
+  await _triggerDownload(filename);
   showToast(`Saved "${filename}" — open it in Upscayl to upscale.`);
 }
 
@@ -1293,7 +1289,7 @@ async function _triggerDownload(filename) {
       const res  = await fetch(href);
       const blob = await res.blob();
       href = URL.createObjectURL(blob);
-      setTimeout(() => URL.revokeObjectURL(href), 60000);
+      setTimeout(() => URL.revokeObjectURL(href), 0);
     } catch {
       // If fetch fails just try the direct link — may navigate instead of download
     }
@@ -1320,8 +1316,8 @@ function genPollinations(prompt, myId, setStatus) {
   return new Promise((resolve, reject) => {
     const img = document.createElement('img');
     img.onload = () => {
-      if (genId !== myId) return;
-      resolve(img);
+      if (genId !== myId) reject(new Error('cancelled'));
+      else resolve(img);
     };
     img.onerror = () => reject(
       new Error('Pollinations AI refused the request — try Stable Horde instead')
@@ -1351,6 +1347,7 @@ async function genHuggingFace(prompt, token, myId, setStatus) {
       const waitSec = Math.ceil(body.estimated_time || 20);
       setStatus('Model loading…', `~${waitSec}s — warming up`);
       await sleep(waitSec * 1000);
+      if (genId !== myId) throw new Error('cancelled');
       return attempt();
     }
     if (!res.ok) {
