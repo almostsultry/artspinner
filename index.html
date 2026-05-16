@@ -10,27 +10,22 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      /* Aluminum tones */
-      --al-edge:  #6e6e6e;
-      --al-dark:  #a8a8a8;
-      --al-mid:   #d0d0d0;
-      --al-peak:  #e4e4e4;
-      --al-hi:    #f0f0f0;
-      /* Brass tones */
+      --al-edge:   #6e6e6e;
+      --al-dark:   #a8a8a8;
+      --al-mid:    #d0d0d0;
+      --al-peak:   #e4e4e4;
       --br-shadow: #3e2800;
       --br-dark:   #7a5a06;
       --br-mid:    #a87e0e;
       --br-base:   #c09820;
       --br-light:  #d4ae2c;
       --br-hi:     #e8c840;
-      /* Reel window (cream card stock) */
       --win-bg:    #ede8d8;
       --win-fade:  rgba(237,232,216,1);
       --win-text:  #1a1000;
-      /* Page */
       --bg:        #0e0e0e;
       --text-page: #ccc4ac;
-      --item-h: 48px;
+      --item-h:    48px;
     }
 
     body {
@@ -45,7 +40,7 @@
       color: var(--text-page);
     }
 
-    /* ── Header ── */
+    /* ── Header — display only, not interactive ── */
     header {
       text-align: center;
       margin-bottom: 2.2rem;
@@ -59,23 +54,6 @@
         0 -1px 0 rgba(240,200,64,0.12),
         0 0 50px rgba(160,120,20,0.18);
       letter-spacing: 0.08em;
-      cursor: pointer;
-      user-select: none;
-      -webkit-user-select: none;
-      transition: text-shadow 0.18s, opacity 0.18s;
-    }
-    header h1:hover {
-      text-shadow:
-        0 2px 4px rgba(0,0,0,0.95),
-        0 -1px 0 rgba(240,200,64,0.2),
-        0 0 70px rgba(200,160,30,0.38);
-    }
-    header h1:active {
-      opacity: 0.75;
-    }
-    header h1.spin-disabled {
-      cursor: not-allowed;
-      opacity: 0.45;
     }
     header p {
       font-size: 0.68rem;
@@ -88,9 +66,6 @@
 
     /* ══════════════════════════════════════
        MACHINE CYLINDER BODY
-       Gradient simulates a horizontal cylinder:
-       darker at top/bottom edges (surfaces curving
-       away), lighter at the centre face.
     ══════════════════════════════════════ */
     .machine {
       background:
@@ -101,21 +76,20 @@
         ),
         linear-gradient(
           180deg,
-          var(--al-edge)  0%,
-          var(--al-dark)  7%,
-          var(--al-mid)   18%,
-          #d8d8d8         32%,
-          var(--al-peak)  50%,
-          #d8d8d8         68%,
-          var(--al-mid)   82%,
-          var(--al-dark)  93%,
-          var(--al-edge)  100%
+          var(--al-edge) 0%,
+          var(--al-dark) 7%,
+          var(--al-mid)  18%,
+          #d8d8d8        32%,
+          var(--al-peak) 50%,
+          #d8d8d8        68%,
+          var(--al-mid)  82%,
+          var(--al-dark) 93%,
+          var(--al-edge) 100%
         );
       border-radius: 14px;
       padding: 2rem 1.5rem 1.2rem;
       position: relative;
-      min-width: min(620px, calc(100vw - 2rem));
-      /* Brass inlay border ring + depth */
+      min-width: min(680px, calc(100vw - 2rem));
       box-shadow:
         0 0 0 1px #444,
         0 0 0 3px var(--br-base),
@@ -129,8 +103,6 @@
 
     /* ══════════════════════════════════════
        BRASS PLATE
-       Sits flush in the front face of the
-       cylinder, housing the reel windows.
     ══════════════════════════════════════ */
     .brass-plate {
       background:
@@ -149,18 +121,18 @@
         0 4px 14px rgba(0,0,0,0.4);
     }
 
-    /* Reel row inside the brass plate */
     .reels-frame {
       display: flex;
-      gap: 7px;             /* brass visible between windows */
+      gap: 7px;
       background: transparent;
       border: none;
       box-shadow: none;
       border-radius: 0;
       overflow: visible;
+      align-items: stretch;
     }
 
-    /* ── Individual reel columns ── */
+    /* ── Reel columns ── */
     .reel-col {
       flex: 1;
       display: flex;
@@ -169,9 +141,7 @@
       padding: 0;
       min-width: 0;
     }
-    .reel-col + .reel-col { border-left: none; }
 
-    /* Label sits on the brass surface above window */
     .reel-label {
       font-size: 0.5rem;
       letter-spacing: 0.2em;
@@ -184,7 +154,7 @@
       width: 100%;
     }
 
-    /* ── Reel window — cream card stock cutout ── */
+    /* ── Reel window — cream card stock ── */
     .reel-window {
       width: 100%;
       height: 240px;
@@ -197,26 +167,22 @@
         inset 0 1px 4px rgba(0,0,0,0.35),
         0 1px 0 rgba(255,225,80,0.14);
     }
-
-    /* Fade to cream at top & bottom */
     .reel-window::before {
       content: '';
       position: absolute;
       inset: 0;
       background: linear-gradient(
         180deg,
-        var(--win-fade)   0%,
-        rgba(237,232,216,.72) 15%,
-        rgba(237,232,216,0)   34%,
-        rgba(237,232,216,0)   66%,
-        rgba(237,232,216,.72) 85%,
-        var(--win-fade)  100%
+        var(--win-fade)         0%,
+        rgba(237,232,216,.72)  15%,
+        rgba(237,232,216,0)    34%,
+        rgba(237,232,216,0)    66%,
+        rgba(237,232,216,.72)  85%,
+        var(--win-fade)        100%
       );
       z-index: 2;
       pointer-events: none;
     }
-
-    /* Centre selection — pair of brass hair-lines */
     .reel-window::after {
       content: '';
       position: absolute;
@@ -235,7 +201,6 @@
       top: 0; left: 0; right: 0;
     }
 
-    /* Reel text — dark ink on cream */
     .reel-item {
       height: var(--item-h);
       display: flex;
@@ -258,9 +223,9 @@
       font-weight: 700;
     }
 
-    .reel-col.spinning .reel-window   { filter: blur(0.6px); }
+    .reel-col.spinning .reel-window        { filter: blur(0.6px); }
     .reel-col.spinning .reel-window::after { display: none; }
-    .reel-col.spinning .reel-item     { transition: none; }
+    .reel-col.spinning .reel-item          { transition: none; }
 
     .reel-col.locked .reel-window::after {
       border-color: rgba(150,110,10,.65);
@@ -269,47 +234,170 @@
         inset 0 0 10px rgba(160,120,16,.06);
       animation: win-glow .85s ease-in-out 3;
     }
-    .reel-col.locked .reel-item.center {
-      color: #2a1800;
-    }
+    .reel-col.locked .reel-item.center { color: #2a1800; }
+
     @keyframes win-glow {
       0%,100% { box-shadow: 0 0 4px rgba(150,110,10,.12); }
       50%      { box-shadow: 0 0 18px rgba(150,110,10,.38); }
     }
 
-    /* ── Badge panel (right of reels, on brass plate) ── */
+    /* ══════════════════════════════════════
+       BADGE PANEL
+       Right-side control column on the brass
+       plate. Contains two raised brass buttons:
+       the spin zone (top) and settings (bottom).
+    ══════════════════════════════════════ */
     .plate-badge {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 116px;
+      flex-shrink: 0;
+      border-left: 1px solid rgba(0,0,0,0.28);
+      padding-left: 8px;
+      /* stretches to match reel-col height (label + window) */
+    }
+
+    /* ── Raised spin button — fills most of badge height ── */
+    .badge-spin-zone {
+      flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 5px;
-      padding: 0 8px 0 10px;
-      border-left: 1px solid rgba(0,0,0,.22);
-      width: 56px;
-      flex-shrink: 0;
-      height: 240px;  /* match reel-window height */
-      align-self: flex-end;
+      gap: 10px;
+      padding: 12px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      /* Convex raised surface on brass */
+      background: linear-gradient(150deg,
+        rgba(255,248,140,0.30) 0%,
+        rgba(210,170,28,0.10)  45%,
+        rgba(0,0,0,0.18)       100%
+      );
+      box-shadow:
+        inset 0  1px 0 rgba(255,252,160,0.65),
+        inset 1px 0  0 rgba(255,245,130,0.32),
+        inset 0 -2px 0 rgba(0,0,0,0.40),
+        inset -2px 0 0 rgba(0,0,0,0.22),
+        0 3px 7px rgba(0,0,0,0.35),
+        0 1px 2px rgba(0,0,0,0.20);
+      transition: background .12s, box-shadow .08s, transform .07s;
     }
-    .plate-badge svg {
-      width: 26px; height: 26px;
-      stroke: rgba(12,6,0,.5);
+    .badge-spin-zone:hover {
+      background: linear-gradient(150deg,
+        rgba(255,252,150,0.40) 0%,
+        rgba(215,178,34,0.15)  45%,
+        rgba(0,0,0,0.14)       100%
+      );
+      box-shadow:
+        inset 0  1px 0 rgba(255,255,170,0.75),
+        inset 1px 0  0 rgba(255,250,140,0.40),
+        inset 0 -2px 0 rgba(0,0,0,0.36),
+        inset -2px 0 0 rgba(0,0,0,0.18),
+        0 4px 9px rgba(0,0,0,0.40),
+        0 1px 3px rgba(0,0,0,0.22);
+    }
+    .badge-spin-zone:active {
+      transform: translateY(1px);
+      background: rgba(0,0,0,0.10);
+      box-shadow:
+        inset 0  2px 8px rgba(0,0,0,0.50),
+        inset 0  1px 2px rgba(0,0,0,0.28),
+        inset -1px 0 3px rgba(0,0,0,0.18),
+        0 1px 2px rgba(0,0,0,0.18);
+    }
+    .badge-spin-zone.spin-disabled {
+      opacity: 0.42;
+      cursor: not-allowed;
+    }
+    .badge-eye {
+      width: 30px; height: 30px;
+      stroke: rgba(12,6,0,0.50);
       fill: none;
-      stroke-width: 1.2;
+      stroke-width: 1.3;
       stroke-linecap: round;
       stroke-linejoin: round;
+      pointer-events: none;
     }
-    .plate-badge-text {
-      font-family: 'Oswald', sans-serif;
-      font-size: 0.38rem;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      color: rgba(12,6,0,.5);
+    .badge-title {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 1rem;
+      color: rgba(12,6,0,0.60);
       text-align: center;
-      line-height: 1.6;
+      line-height: 1.2;
+      letter-spacing: 0.02em;
+      text-shadow: 0 1px 0 rgba(255,225,100,0.22);
+      pointer-events: none;
     }
 
-    /* ── Plate footer (brand strip inside brass plate) ── */
+    /* ── Raised settings button — fixed at bottom of badge ── */
+    .badge-settings-btn {
+      flex-shrink: 0;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 8px 6px;
+      cursor: pointer;
+      border: none;
+      border-radius: 3px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.52rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(12,6,0,0.55);
+      background: linear-gradient(150deg,
+        rgba(255,242,120,0.28) 0%,
+        rgba(0,0,0,0.20)       100%
+      );
+      box-shadow:
+        inset 0  1px 0 rgba(255,248,140,0.55),
+        inset 1px 0  0 rgba(255,240,120,0.25),
+        inset 0 -1px 0 rgba(0,0,0,0.35),
+        inset -1px 0 0 rgba(0,0,0,0.18),
+        0 2px 5px rgba(0,0,0,0.28),
+        0 1px 2px rgba(0,0,0,0.16);
+      transition: background .12s, box-shadow .08s, transform .07s, color .1s;
+    }
+    .badge-settings-btn:hover {
+      color: rgba(12,6,0,0.75);
+      background: linear-gradient(150deg,
+        rgba(255,248,135,0.36) 0%,
+        rgba(0,0,0,0.16)       100%
+      );
+      box-shadow:
+        inset 0  1px 0 rgba(255,252,155,0.65),
+        inset 1px 0  0 rgba(255,245,130,0.32),
+        inset 0 -1px 0 rgba(0,0,0,0.30),
+        inset -1px 0 0 rgba(0,0,0,0.14),
+        0 3px 6px rgba(0,0,0,0.32),
+        0 1px 2px rgba(0,0,0,0.18);
+    }
+    .badge-settings-btn:active {
+      transform: translateY(1px);
+      background: rgba(0,0,0,0.10);
+      box-shadow:
+        inset 0 2px 6px rgba(0,0,0,0.42),
+        inset 0 1px 2px rgba(0,0,0,0.22),
+        0 1px 1px rgba(0,0,0,0.14);
+    }
+    .badge-settings-btn.active {
+      background: rgba(0,0,0,0.10);
+      box-shadow:
+        inset 0 2px 5px rgba(0,0,0,0.42),
+        inset 0 1px 2px rgba(0,0,0,0.20),
+        0 1px 1px rgba(0,0,0,0.12);
+      color: rgba(12,6,0,0.70);
+    }
+    .badge-settings-icon { font-size: 0.85rem; line-height: 1; }
+
+    /* ── Plate footer ── */
     .plate-footer {
       padding: 5px 2px 0;
       display: flex;
@@ -319,12 +407,12 @@
       font-size: 0.42rem;
       letter-spacing: 0.22em;
       text-transform: uppercase;
-      color: rgba(12,6,0,.38);
+      color: rgba(12,6,0,0.38);
       font-style: italic;
       font-family: 'Playfair Display', serif;
     }
 
-    /* ── Machine footer (on aluminum surface, below plate) ── */
+    /* ── Machine aluminum footer ── */
     .machine-footer {
       display: flex;
       justify-content: space-between;
@@ -335,16 +423,15 @@
       font-size: 0.5rem;
       letter-spacing: 0.28em;
       text-transform: uppercase;
-      color: rgba(20,12,0,.38);
-      text-shadow: 0 1px 0 rgba(255,255,255,.45);
+      color: rgba(20,12,0,0.38);
+      text-shadow: 0 1px 0 rgba(255,255,255,0.45);
     }
-
 
     /* ── Result Section ── */
     .result-section {
       margin-top: 2.4rem;
       text-align: center;
-      max-width: 640px;
+      max-width: 680px;
       width: 100%;
       padding: 0 1rem;
     }
@@ -357,16 +444,12 @@
       transition: opacity .4s;
     }
     .prompt-text.dim { opacity: .28; }
-    .prompt-text .hi {
-      color: var(--br-hi);
-      font-style: italic;
-    }
+    .prompt-text .hi { color: var(--br-hi); font-style: italic; }
 
     .gen-row {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: .7rem;
       margin-top: 1.5rem;
     }
     .generate-btn {
@@ -404,21 +487,7 @@
     .generate-btn:active  { transform: translateY(0); }
     .generate-btn:disabled { opacity: .38; cursor: not-allowed; transform: none; }
 
-    .settings-toggle {
-      width: 34px; height: 34px;
-      background: transparent;
-      border: 1px solid var(--br-dark);
-      border-radius: 50%;
-      color: var(--br-dark);
-      font-size: 1rem;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      transition: border-color .2s, color .2s;
-      flex-shrink: 0;
-    }
-    .settings-toggle:hover  { border-color: var(--br-light); color: var(--br-light); }
-    .settings-toggle.active { border-color: var(--br-light); color: var(--br-light); }
-
+    /* Settings panel */
     .settings-panel {
       display: none;
       background: linear-gradient(160deg, #1e1e1e 0%, #161616 100%);
@@ -469,7 +538,7 @@
     .image-section {
       margin-top: 2.4rem;
       width: 100%;
-      max-width: 660px;
+      max-width: 680px;
       padding: 0 1rem;
       display: none;
     }
@@ -489,11 +558,7 @@
       justify-content: center;
       position: relative;
     }
-    .image-frame img {
-      width: 100%; height: 100%;
-      object-fit: cover;
-      display: block;
-    }
+    .image-frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .image-placeholder {
       display: flex;
       flex-direction: column;
@@ -592,28 +657,26 @@
     .toast.show { transform: translateX(-50%) translateY(0); }
 
     /* ── Responsive ── */
-    @media (max-width: 640px) {
-      .machine { padding: 1.5rem 1rem 1rem; }
+    @media (max-width: 680px) {
+      .machine { padding: 1.5rem 1rem 1rem; min-width: unset; width: 100%; }
       .reel-window { height: 192px; }
       .reel-window::after { top: calc(50% - 24px); height: 48px; }
-      .reel-label { font-size: .46rem; }
-      .reel-item  { font-size: .62rem; }
-      .reel-item.center { font-size: .75rem; }
-      .spin-btn   { padding: .75rem 3rem; letter-spacing: .3em; }
-      .plate-badge { width: 44px; }
+      .reel-label { font-size: .44rem; }
+      .reel-item  { font-size: .6rem; }
+      .reel-item.center { font-size: .72rem; }
+      .plate-badge { width: 80px; }
+      .badge-title { font-size: 0.82rem; }
     }
   </style>
 </head>
 <body>
 
 <header>
-  <h1 id="spin-btn" role="button" tabindex="0" aria-label="Spin">Art Spinner</h1>
-  <p>Click to spin &mdash; let fate choose your masterpiece</p>
+  <h1>Art Spinner</h1>
+  <p>A generative art oracle</p>
 </header>
 
 <div class="machine" id="machine">
-
-  <!-- Brass display plate with reel windows -->
   <div class="brass-plate">
     <div class="reels-frame">
 
@@ -632,18 +695,27 @@
         <div class="reel-window"><div class="reel-strip" id="strip-2"></div></div>
       </div>
 
-      <!-- Badge panel — mirrors THE ORACLE's right-side badge -->
+      <!-- Badge: two raised brass buttons stacked -->
       <div class="plate-badge">
-        <!-- Eye icon -->
-        <svg viewBox="0 0 24 24">
-          <ellipse cx="12" cy="12" rx="9" ry="5.5"/>
-          <circle cx="12" cy="12" r="2.4" fill="rgba(12,6,0,.45)" stroke="none"/>
-          <line x1="12" y1="4" x2="12" y2="6.4" stroke-width="1"/>
-          <line x1="12" y1="17.6" x2="12" y2="20" stroke-width="1"/>
-        </svg>
-        <div class="plate-badge-text">Art<br>Spinner</div>
-      </div>
 
+        <!-- Spin zone — large raised button, top of badge -->
+        <div class="badge-spin-zone" id="spin-btn" role="button" tabindex="0" aria-label="Spin the reels">
+          <svg class="badge-eye" viewBox="0 0 24 24">
+            <ellipse cx="12" cy="12" rx="9" ry="5.5"/>
+            <circle cx="12" cy="12" r="2.4" fill="rgba(12,6,0,.42)" stroke="none"/>
+            <line x1="12" y1="4"    x2="12" y2="6.5"  stroke-width="1.1"/>
+            <line x1="12" y1="17.5" x2="12" y2="20"   stroke-width="1.1"/>
+          </svg>
+          <div class="badge-title">Art<br>Spinner</div>
+        </div>
+
+        <!-- Settings — raised button, bottom of badge -->
+        <button class="badge-settings-btn" id="settings-toggle" aria-label="Image generation settings">
+          <span class="badge-settings-icon">&#9881;</span>
+          <span>Settings</span>
+        </button>
+
+      </div>
     </div>
 
     <div class="plate-footer">
@@ -651,23 +723,20 @@
     </div>
   </div>
 
-  <!-- Aluminum machine footer strip -->
   <div class="machine-footer">
     <span class="brand">Art Spinner&trade;</span>
     <span class="brand" style="opacity:.22">&#9670;</span>
     <span class="brand">Generative&nbsp;Art&nbsp;Engine</span>
   </div>
-
 </div>
 
 <div class="result-section">
   <div class="prompt-text dim" id="prompt-text">
-    Press Spin to select your fate&hellip;
+    Press the badge to spin your fate&hellip;
   </div>
 
   <div class="gen-row">
     <button class="generate-btn" id="gen-btn">&#10024; Generate Image</button>
-    <button class="settings-toggle" id="settings-toggle" title="Image generation settings">&#9881;</button>
   </div>
 
   <div class="settings-panel" id="settings-panel">
@@ -848,11 +917,13 @@ let currentPrompt = '';
 
 function init() {
   reels = DATA.map((items, i) => new Reel(`reel-${i}`, items));
-  const logo = document.getElementById('spin-btn');
-  logo.addEventListener('click', handleSpin);
-  logo.addEventListener('keydown', e => {
+
+  const spinZone = document.getElementById('spin-btn');
+  spinZone.addEventListener('click', handleSpin);
+  spinZone.addEventListener('keydown', e => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSpin(); }
   });
+
   document.getElementById('gen-btn').addEventListener('click', generateImage);
   initSettings();
 }
@@ -1056,7 +1127,6 @@ async function genHuggingFace(prompt, token, myId, setStatus) {
         })
       }
     );
-
     if (res.status === 503) {
       const body    = await res.json().catch(() => ({}));
       const waitSec = Math.ceil(body.estimated_time || 20);
@@ -1064,12 +1134,10 @@ async function genHuggingFace(prompt, token, myId, setStatus) {
       await sleep(waitSec * 1000);
       return attempt();
     }
-
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       throw new Error(body.error || `HTTP ${res.status}`);
     }
-
     const blob = await res.blob();
     if (!blob.type.startsWith('image/')) throw new Error('Non-image response — check your token');
     return blobToImg(blob);
@@ -1087,25 +1155,21 @@ async function genTogether(prompt, token, myId, setStatus) {
     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'black-forest-labs/FLUX.1-schnell-Free',
-      prompt,
-      width: 1920, height: 1080,
-      steps: 4, n: 1,
+      prompt, width: 1920, height: 1080, steps: 4, n: 1,
       response_format: 'b64_json'
     })
   });
-
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error?.message || `HTTP ${res.status}`);
   }
-
   const data = await res.json();
   const b64  = data.data?.[0]?.b64_json;
   if (!b64) throw new Error('No image data in Together AI response');
   return base64ToImg(b64);
 }
 
-/* ── Stable Horde (free, anon key) ── */
+/* ── Stable Horde ── */
 async function genStableHorde(prompt, myId, setStatus) {
   setStatus('Joining AI queue…', 'Stable Horde community GPUs');
 
@@ -1119,7 +1183,6 @@ async function genStableHorde(prompt, myId, setStatus) {
       r2: false
     })
   });
-
   if (!res.ok) throw new Error(`Stable Horde queue error: HTTP ${res.status}`);
   const { id } = await res.json();
   if (!id) throw new Error('No job ID from Stable Horde');
