@@ -378,6 +378,13 @@
       text-transform: uppercase;
       opacity: 0.55;
     }
+    .loading-sub {
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      opacity: 0.35;
+      margin-top: -0.5rem;
+    }
     .fallback-prompt {
       font-family: 'Playfair Display', serif;
       font-style: italic;
@@ -800,30 +807,42 @@ function onAllStopped() {
 
 /* ──────────────────────────────────────────
    IMAGE GENERATION
-   Primary: pollinations.ai (free, no key, <img> to skip CORS/Origin blocks)
-   Fallback: Bing Image Creator (DALL-E, free with Microsoft account)
+   1. pollinations.ai via <img> (fast, no key, no CORS header)
+   2. Stable Horde (stablehorde.net) if pollinations fails —
+      free distributed GPU network, public anon key, returns base64
+   3. Manual fallback buttons if both fail
 ────────────────────────────────────────── */
+
+let genId = 0; // incremented on each new generation to cancel stale polls
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
 function generateImage() {
   const [media, influence, style] = results;
   if (!media) return;
+
+  genId++;
+  const myId = genId;
 
   const btn = document.getElementById('gen-btn');
   btn.disabled    = true;
   btn.textContent = 'Generating…';
 
-  const prompt       = `${media}, inspired by ${influence}, ${style} style, highly detailed`;
-  currentPrompt      = prompt;
-  // Bare URL — no width/height/seed so network proxies can't reject unknown params
+  const prompt          = `${media}, inspired by ${influence}, ${style} style, highly detailed`;
+  currentPrompt         = prompt;
   const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`;
-  // Bing Image Creator: DALL-E-powered, free with a Microsoft account, prompt pre-filled
   const bingUrl         = `https://www.bing.com/images/create?q=${encodeURIComponent(prompt)}`;
+  const frame           = document.getElementById('img-frame');
 
-  const frame = document.getElementById('img-frame');
-  let timer = null, deadline = null;
+  const setStatus = (main, sub = '') => {
+    const m = frame.querySelector('.loading-status');
+    const s = frame.querySelector('.loading-sub');
+    if (m) m.textContent = main;
+    if (s) s.textContent = sub;
+  };
 
   const showFallback = (msg) => {
-    clearInterval(timer);
-    clearTimeout(deadline);
+    if (genId !== myId) return;
     frame.innerHTML = `
       <div class="image-placeholder">
         <p>${msg}</p>
@@ -835,52 +854,105 @@ function generateImage() {
           <a class="open-link" href="${pollinationsUrl}" target="_blank" rel="noopener noreferrer">
             Try on Pollinations ↗
           </a>
-          <button class="open-link" onclick="copyCurrentPrompt()">
-            Copy Prompt
-          </button>
+          <button class="open-link" onclick="copyCurrentPrompt()">Copy Prompt</button>
         </div>
       </div>`;
     btn.disabled    = false;
     btn.textContent = '✨ Try Again';
   };
 
-  let secs = 0;
-  timer = setInterval(() => {
-    secs++;
-    const el = frame.querySelector('.loading-secs');
-    if (el) el.textContent = `${secs}s`;
-  }, 1000);
-
-  deadline = setTimeout(() => {
-    img.src = '';
-    showFallback('Timed out after 90s');
-  }, 90000);
-
-  frame.innerHTML = `
-    <div class="image-placeholder">
-      <div class="loading-ring"></div>
-      <p>Generating your artwork&hellip; <span class="loading-secs">0s</span></p>
-    </div>`;
-
-  const img = new Image();
-
-  img.onload = () => {
-    clearInterval(timer);
-    clearTimeout(deadline);
+  const displaySuccess = (imgEl) => {
+    if (genId !== myId) return;
     frame.innerHTML = '';
-    frame.appendChild(img);
-
-    const cap = document.getElementById('img-caption');
-    cap.textContent = `"${prompt}"`;
-    cap.classList.add('visible');
-
+    frame.appendChild(imgEl);
+    document.getElementById('img-caption').textContent = `"${prompt}"`;
+    document.getElementById('img-caption').classList.add('visible');
     btn.disabled    = false;
     btn.textContent = '✨ Generate Again';
   };
 
-  img.onerror = () => showFallback('Auto&#8209;generation blocked or unavailable');
+  frame.innerHTML = `
+    <div class="image-placeholder">
+      <div class="loading-ring"></div>
+      <p class="loading-status">Generating your artwork…</p>
+      <p class="loading-sub">Trying fast generator</p>
+    </div>`;
 
-  img.src = pollinationsUrl;
+  // ── Phase 1: try pollinations.ai via <img> (no Origin header) ──
+  const polImg = new Image();
+
+  polImg.onload = () => {
+    if (genId !== myId) return;
+    displaySuccess(polImg);
+  };
+
+  polImg.onerror = () => {
+    if (genId !== myId) return;
+    // pollinations blocked — fall through to Stable Horde immediately
+    setStatus('Joining AI queue…', 'Using community GPU network');
+    tryStableHorde(prompt, myId, frame, setStatus)
+      .then(imgEl => displaySuccess(imgEl))
+      .catch(err  => showFallback(esc(err.message)));
+  };
+
+  polImg.src = pollinationsUrl;
+}
+
+async function tryStableHorde(prompt, myId, frame, setStatus) {
+  const ANON_KEY = '0000000000'; // Stable Horde public anon key
+
+  const submitRes = await fetch('https://stablehorde.net/api/v2/generate/async', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': ANON_KEY },
+    body: JSON.stringify({
+      prompt,
+      params: { width: 512, height: 512, steps: 20, n: 1,
+                sampler_name: 'k_euler_a', cfg_scale: 7 },
+      r2: false
+    })
+  });
+
+  if (!submitRes.ok) throw new Error(`Queue error: HTTP ${submitRes.status}`);
+  const { id } = await submitRes.json();
+  if (!id) throw new Error('No job ID from Stable Horde');
+
+  for (let i = 0; i < 72; i++) {       // up to 6 minutes (72 × 5 s)
+    if (genId !== myId) return;         // cancelled by a new generation
+
+    await sleep(5000);
+
+    const check = await fetch(`https://stablehorde.net/api/v2/generate/check/${id}`)
+      .then(r => r.json());
+
+    if (check.faulted) throw new Error('Job faulted on Stable Horde');
+
+    if (check.done) {
+      const status = await fetch(`https://stablehorde.net/api/v2/generate/status/${id}`)
+        .then(r => r.json());
+      const b64 = status.generations?.[0]?.img;
+      if (!b64) throw new Error('No image data in response');
+      return base64ToImg(b64);
+    }
+
+    // Show live queue info
+    const parts = [];
+    if (check.queue_position > 0) parts.push(`queue: ${check.queue_position}`);
+    if (check.wait_time > 0)      parts.push(`~${check.wait_time}s`);
+    setStatus('Generating…', parts.join(' · ') || 'working…');
+  }
+
+  throw new Error('Timed out after 6 minutes');
+}
+
+function base64ToImg(b64) {
+  // Detect format from magic bytes encoded in base64
+  let mime = 'image/png';
+  if (b64.startsWith('/9j/'))   mime = 'image/jpeg';
+  if (b64.startsWith('UklGR')) mime = 'image/webp';
+
+  const img = document.createElement('img');
+  img.src = `data:${mime};base64,${b64}`;
+  return img;
 }
 
 function copyCurrentPrompt() {
