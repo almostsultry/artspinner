@@ -1283,9 +1283,24 @@ function _promptSlug() {
     .replace(/^-|-$/g, '')) || String(Date.now());
 }
 
-function _triggerDownload(filename) {
+async function _triggerDownload(filename) {
+  let href = currentImgEl.src;
+
+  // Remote URLs (e.g. Pollinations) can't be downloaded directly cross-origin;
+  // fetch to a local blob URL first so the browser downloads instead of navigating.
+  if (href.startsWith('http')) {
+    try {
+      const res  = await fetch(href);
+      const blob = await res.blob();
+      href = URL.createObjectURL(blob);
+      setTimeout(() => URL.revokeObjectURL(href), 60000);
+    } catch {
+      // If fetch fails just try the direct link — may navigate instead of download
+    }
+  }
+
   const a = document.createElement('a');
-  a.href = currentImgEl.src;
+  a.href = href;
   a.download = filename;
   a.style.display = 'none';
   document.body.appendChild(a);
@@ -1294,20 +1309,25 @@ function _triggerDownload(filename) {
 }
 
 /* ── Pollinations AI ── */
-async function genPollinations(prompt, myId, setStatus) {
-  setStatus('Generating with FLUX…', 'Pollinations AI');
+function genPollinations(prompt, myId, setStatus) {
+  setStatus('Generating with FLUX…', 'Pollinations AI — please wait');
 
   const url = 'https://image.pollinations.ai/prompt/' +
     encodeURIComponent(prompt) +
-    '?width=1920&height=1080&model=flux&nologo=true&seed=' +
+    '?width=1920&height=1080&seed=' +
     Math.floor(Math.random() * 2147483647);
 
-  const res = await fetch(url);
-  if (genId !== myId) return;
-  if (!res.ok) throw new Error(`Pollinations error: HTTP ${res.status}`);
-  const blob = await res.blob();
-  if (!blob.type.startsWith('image/')) throw new Error('Unexpected response from Pollinations AI');
-  return blobToImg(blob);
+  return new Promise((resolve, reject) => {
+    const img = document.createElement('img');
+    img.onload = () => {
+      if (genId !== myId) return;
+      resolve(img);
+    };
+    img.onerror = () => reject(
+      new Error('Pollinations AI refused the request — try Stable Horde instead')
+    );
+    img.src = url;
+  });
 }
 
 /* ── Hugging Face ── */
