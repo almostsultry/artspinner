@@ -25,7 +25,7 @@
       --win-text:  #1a1000;
       --bg:        #0e0e0e;
       --text-page: #ccc4ac;
-      --flap-h:    240px;
+      --flap-h:    280px;
     }
 
     body {
@@ -91,7 +91,7 @@
         );
       border-radius: 14px;
       padding: 2rem 1.5rem 1.2rem;
-      min-width: min(880px, calc(100vw - 2rem));
+      min-width: min(1170px, calc(100vw - 2rem));
       box-shadow:
         0 0 0 1px #444,
         0 0 0 3px var(--br-base),
@@ -199,7 +199,7 @@
       justify-content: center;
       font-family: 'Oswald', sans-serif;
       font-weight: 600;
-      font-size: clamp(0.75rem, 1.5vw, 1.05rem);
+      font-size: clamp(0.85rem, 1.6vw, 1.3rem);
       text-transform: uppercase;
       letter-spacing: 0.05em;
       text-align: center;
@@ -219,7 +219,7 @@
       left: 0; right: 0;
       top: 50%;
       height: 1px;
-      background: rgba(100,70,0,0.35);
+      background: var(--al-mid);
       z-index: 10;
       pointer-events: none;
     }
@@ -417,7 +417,7 @@
       z-index: 2;
       margin-top: 2.4rem;
       text-align: center;
-      max-width: 880px;
+      max-width: 1170px;
       width: 100%;
       padding: 0 1rem;
     }
@@ -542,7 +542,7 @@
       z-index: 2;
       margin-top: 2.4rem;
       width: 100%;
-      max-width: 880px;
+      max-width: 1170px;
       padding: 0 1rem;
       display: none;
     }
@@ -725,7 +725,7 @@
     .toast.show { transform: translateX(-50%) translateY(0); }
 
     /* ── Responsive ── */
-    @media (max-width: 880px) {
+    @media (max-width: 1170px) {
       :root { --flap-h: 192px; }
       .machine { padding: 1.5rem 1rem 1rem; min-width: unset; width: 100%; }
       .reel-label, .badge-label { font-size: .44rem; }
