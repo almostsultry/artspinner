@@ -603,7 +603,7 @@
     <div class="settings-row">
       <label class="settings-label" for="service-select">Image service</label>
       <select class="settings-select" id="service-select">
-        <option value="stablehorde">Stable Horde &mdash; free, no key (slow, ~1344&times;768)</option>
+        <option value="stablehorde">Stable Horde &mdash; free, no key (slow, 576&times;320)</option>
         <option value="huggingface">Hugging Face &mdash; free token, FLUX, 1920&times;1080</option>
         <option value="together">Together AI &mdash; free key, FLUX, 1920&times;1080</option>
       </select>
@@ -1099,7 +1099,7 @@ async function genStableHorde(prompt, myId, setStatus) {
     headers: { 'Content-Type': 'application/json', 'apikey': '0000000000' },
     body: JSON.stringify({
       prompt,
-      params: { width: 1344, height: 768, steps: 20, n: 1,
+      params: { width: 576, height: 320, steps: 20, n: 1,
                 sampler_name: 'k_euler_a', cfg_scale: 7 },
       r2: false
     })
