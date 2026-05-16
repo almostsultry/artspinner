@@ -943,40 +943,36 @@ class Reel {
   getValue() { return this.items[this.idx]; }
 
   /* Single flip from current idx to nextIdx.
-     duration = total ms for the flip; calls onDone when settled. */
+     Both halves animate simultaneously so each always shows a mid-flip
+     state at the same time — fold falls while incoming rises, mirrored. */
   _flip(nextIdx, duration, onDone) {
-    const next    = this.items[nextIdx];
-    const halfDur = Math.max(28, Math.round(duration / 2));
+    const next = this.items[nextIdx];
 
-    // Upper half immediately shows the incoming value (fold hides it until it falls)
+    // Static upper immediately shows the next value (fold covers it until it rotates away)
     this._upper.textContent = next;
+    this._inT.textContent   = next;
 
-    // Phase 1 — fold falls (0° → −90°, eases in)
-    this._fold.style.transition = `transform ${halfDur}ms ease-in`;
+    // Both halves animate together for the full duration
+    const t = `transform ${duration}ms ease-in-out`;
+    this._fold.style.transition = t;
+    this._in.style.transition   = t;
     this._fold.style.transform  = 'rotateX(-90deg)';
+    this._in.style.transform    = 'rotateX(0deg)';
 
     setTimeout(() => {
-      // Phase 2 — incoming bottom rises (90° → 0°, eases out)
-      this._inT.textContent = next;
-      this._in.style.transition = `transform ${halfDur}ms ease-out`;
-      this._in.style.transform  = 'rotateX(0deg)';
+      // Settle: update static layers, reset animated ones without transition
+      this.idx = nextIdx;
+      this._lower.textContent = next;
+      this._foldT.textContent = next;
 
-      setTimeout(() => {
-        // Settle: update the static layers, reset animated ones
-        this.idx = nextIdx;
-        this._lower.textContent = next;
-        this._foldT.textContent = next;
-
-        // Suppress transitions before snapping back (double-rAF avoids flash)
-        this._fold.style.transition = 'none';
-        this._in.style.transition   = 'none';
-        requestAnimationFrame(() => requestAnimationFrame(() => {
-          this._fold.style.transform = 'rotateX(0deg)';
-          this._in.style.transform   = 'rotateX(90deg)';
-          onDone && onDone();
-        }));
-      }, halfDur);
-    }, halfDur);
+      this._fold.style.transition = 'none';
+      this._in.style.transition   = 'none';
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        this._fold.style.transform = 'rotateX(0deg)';
+        this._in.style.transform   = 'rotateX(90deg)';
+        onDone && onDone();
+      }));
+    }, duration);
   }
 
   spin(duration, targetIdx, onStop) {
@@ -989,7 +985,7 @@ class Reel {
     const end = Date.now() + duration;
 
     const fastPhase = () => {
-      this._flip((this.idx + 1) % this.N, 90, () => {
+      this._flip((this.idx + 1) % this.N, 120, () => {
         if (Date.now() < end) {
           fastPhase();
         } else {
@@ -1009,7 +1005,7 @@ class Reel {
     let step = 0;
     const tick = () => {
       const p   = step / steps;
-      const dur = 90 + Math.round(p * p * 530); // 90 ms → 620 ms
+      const dur = 120 + Math.round(p * p * 560); // 120 ms → 680 ms
 
       this._flip((this.idx + 1) % this.N, dur, () => {
         step++;
