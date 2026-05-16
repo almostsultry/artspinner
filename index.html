@@ -165,10 +165,23 @@
       position: relative;
       border-radius: 4px;
       perspective: 500px;
+      cursor: pointer;
       box-shadow:
         inset 0 3px 10px rgba(0,0,0,0.22),
         inset 0 1px 3px rgba(0,0,0,0.14),
         0 1px 0 rgba(255,225,80,0.14);
+      transition: box-shadow .15s;
+    }
+    .flap-cell:hover {
+      box-shadow:
+        inset 0 3px 10px rgba(0,0,0,0.22),
+        inset 0 1px 3px rgba(0,0,0,0.14),
+        0 1px 0 rgba(255,225,80,0.14),
+        0 0 0 2px rgba(200,155,40,.40);
+    }
+    .reel-col.spinning .flap-cell {
+      cursor: default;
+      pointer-events: none;
     }
 
     /* Each half is absolutely positioned; overflow:hidden clips text to its half */
@@ -295,16 +308,6 @@
     }
     .reel-col.user-locked .flap-cell:hover {
       outline-color: rgba(220,175,60,.85);
-    }
-    .reel-col.user-locked .flap-cell::after {
-      content: '▶';
-      position: absolute;
-      right: 8px;
-      bottom: 7px;
-      font-size: .62rem;
-      color: rgba(220,175,60,.6);
-      pointer-events: none;
-      z-index: 20;
     }
 
     /* ══════════════════════════════════════
@@ -1020,7 +1023,7 @@ class Reel {
 
     // Click cell while locked → step to next value
     cell.addEventListener('click', () => {
-      if (this.userLocked && !this.spinning) this._stepForward();
+      if (!this.spinning) this._stepForward();
     });
   }
 
