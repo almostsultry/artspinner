@@ -830,8 +830,10 @@ function generateImage() {
 
   const prompt          = `${media}, inspired by ${influence}, ${style} style, highly detailed`;
   currentPrompt         = prompt;
-  const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`;
-  const bingUrl         = `https://www.bing.com/images/create?q=${encodeURIComponent(prompt)}`;
+  const encoded         = encodeURIComponent(prompt);
+  // Both endpoints shown in the manual-fallback buttons
+  const pollinationsUrl = `https://enter.pollinations.ai/prompt/${encoded}`;
+  const bingUrl         = `https://www.bing.com/images/create?q=${encoded}`;
   const frame           = document.getElementById('img-frame');
 
   const setStatus = (main, sub = '') => {
@@ -878,33 +880,38 @@ function generateImage() {
       <p class="loading-sub">Trying fast generator</p>
     </div>`;
 
-  // ── Phase 1: try pollinations.ai via <img> (no Origin header) ──
-  const polImg = new Image();
+  // ── Phase 1: race both pollinations endpoints simultaneously ──
+  // image.pollinations.ai  = anonymous-only (rejects logged-in users with JSON error)
+  // enter.pollinations.ai  = authenticated users (requires being logged in)
+  // Whichever returns a valid image first wins; both failing moves to Phase 2.
+  const polUrls = [
+    `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`,
+    `https://enter.pollinations.ai/prompt/${encodeURIComponent(prompt)}`
+  ];
 
-  polImg.onload = () => {
-    if (genId !== myId) return;
-    displaySuccess(polImg);
+  let polFails = 0;
+  let polDone  = false;
+
+  const onPolLoad = (img) => {
+    if (polDone || genId !== myId) return;
+    polDone = true;
+    displaySuccess(img);
   };
 
-  polImg.onerror = () => {
-    if (genId !== myId) return;
+  const onPolError = () => {
+    if (polDone || genId !== myId) return;
+    polFails++;
+    if (polFails < polUrls.length) return; // still waiting on the other one
+    polDone = true;
 
-    // Pollinations is reachable by direct browser navigation but blocked for
-    // cross-origin <img> requests.  Opening the URL in a new tab:
-    //   1. triggers generation on the origin server
-    //   2. Cloudflare caches the result at its CDN edge
-    // Subsequent <img> requests hit that CDN edge (different IPs, not blocked).
-    // window.open() is allowed here because we're still inside the user-gesture
-    // window from the original "Generate Image" click.
-    const tab = window.open(pollinationsUrl, '_blank');
+    // Both endpoints failed via <img> — open them in new tabs to warm the
+    // Cloudflare CDN cache, then poll the same URLs until one loads.
+    const tabs = polUrls.map(u => { try { return window.open(u, '_blank'); } catch { return null; } });
+    const anyTab = tabs.some(Boolean);
 
-    if (!tab) {
-      // Popup was blocked — fall back to manual flow
-      showFallback('Popup blocked by browser');
-      return;
-    }
+    if (!anyTab) { showFallback('Popup blocked by browser'); return; }
 
-    setStatus('Generating via Pollinations…', 'New tab opened — auto-loading when ready');
+    setStatus('Generating via Pollinations…', 'New tabs opened — auto-loading when ready');
 
     let attempt = 0;
     const MAX = 18; // 18 × 10 s = 3 min
@@ -913,36 +920,47 @@ function generateImage() {
       if (genId !== myId) return;
       attempt++;
 
-      const r = new Image();
+      let retryDone  = false;
+      let retryFails = 0;
 
-      r.onload = () => {
-        if (genId !== myId) return;
-        try { tab.close(); } catch (_) {}
-        displaySuccess(r);
-      };
-
-      r.onerror = () => {
-        if (genId !== myId) return;
-        if (attempt < MAX) {
-          setStatus('Waiting for image…', `${attempt * 10}s — you can close the Pollinations tab`);
-          setTimeout(retry, 10000);
-        } else {
-          // CDN didn't warm in time — hand off to Stable Horde
-          try { tab.close(); } catch (_) {}
-          setStatus('Joining AI queue…', 'Using community GPU network');
-          tryStableHorde(prompt, myId, frame, setStatus)
-            .then(imgEl => displaySuccess(imgEl))
-            .catch(err  => showFallback(esc(err.message)));
-        }
-      };
-
-      r.src = pollinationsUrl; // same URL = CDN cache hit once warm
+      polUrls.forEach(url => {
+        const r = new Image();
+        r.onload = () => {
+          if (retryDone || genId !== myId) return;
+          retryDone = true;
+          tabs.forEach(t => { try { t?.close(); } catch {} });
+          displaySuccess(r);
+        };
+        r.onerror = () => {
+          if (retryDone) return;
+          retryFails++;
+          if (retryFails < polUrls.length) return;
+          // All URLs still failing
+          if (attempt < MAX) {
+            setStatus('Waiting for image…', `${attempt * 10}s — you can close the Pollinations tabs`);
+            setTimeout(retry, 10000);
+          } else {
+            tabs.forEach(t => { try { t?.close(); } catch {} });
+            setStatus('Joining AI queue…', 'Using community GPU network');
+            tryStableHorde(prompt, myId, frame, setStatus)
+              .then(imgEl => displaySuccess(imgEl))
+              .catch(err  => showFallback(esc(err.message)));
+          }
+        };
+        r.src = url;
+      });
     };
 
     setTimeout(retry, 15000); // give origin ~15 s to generate before first check
   };
 
-  polImg.src = pollinationsUrl;
+  // Fire both requests
+  polUrls.forEach(url => {
+    const img = new Image();
+    img.onload  = () => onPolLoad(img);
+    img.onerror = onPolError;
+    img.src = url;
+  });
 }
 
 async function tryStableHorde(prompt, myId, frame, setStatus) {
