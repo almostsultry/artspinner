@@ -378,18 +378,39 @@
       text-transform: uppercase;
       opacity: 0.55;
     }
+    .fallback-prompt {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 0.85rem;
+      color: var(--gold-light);
+      opacity: 0.9;
+      text-transform: none;
+      letter-spacing: 0;
+      max-width: 340px;
+      line-height: 1.5;
+      margin: 0;
+    }
+    .fallback-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      justify-content: center;
+      margin-top: 0.25rem;
+    }
     .open-link {
       display: inline-block;
-      margin-top: 0.25rem;
-      padding: 0.5rem 1.4rem;
+      padding: 0.5rem 1.2rem;
       border: 1px solid var(--gold-dark);
       border-radius: 50px;
       color: var(--gold);
-      font-size: 0.72rem;
+      font-size: 0.68rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
       text-decoration: none;
       transition: background 0.2s, color 0.2s;
+      cursor: pointer;
+      background: transparent;
+      font-family: 'Oswald', sans-serif;
     }
     .open-link:hover { background: var(--gold-dark); color: #fff; }
     .loading-ring {
@@ -660,7 +681,8 @@ function buildLights(id, count = 22) {
   }
 }
 
-let lightTimer = null;
+let lightTimer    = null;
+let currentPrompt = '';
 
 function setLightsAnimating(on) {
   clearInterval(lightTimer);
@@ -777,7 +799,9 @@ function onAllStopped() {
 }
 
 /* ──────────────────────────────────────────
-   IMAGE GENERATION (pollinations.ai — free, no key)
+   IMAGE GENERATION
+   Primary: pollinations.ai (free, no key, <img> to skip CORS/Origin blocks)
+   Fallback: Bing Image Creator (DALL-E, free with Microsoft account)
 ────────────────────────────────────────── */
 function generateImage() {
   const [media, influence, style] = results;
@@ -787,45 +811,55 @@ function generateImage() {
   btn.disabled    = true;
   btn.textContent = 'Generating…';
 
-  // Concise prompt: verbose “masterpiece” language can trigger content filters
-  const prompt = `${media}, inspired by ${influence}, ${style} style, highly detailed`;
-  const seed   = Math.floor(Math.random() * 999999);
-  // Use <img> loading (no Origin header) to avoid hotlink-protection 403s from fetch()
-  const url    = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=768&seed=${seed}`;
+  const prompt       = `${media}, inspired by ${influence}, ${style} style, highly detailed`;
+  currentPrompt      = prompt;
+  // Bare URL — no width/height/seed so network proxies can't reject unknown params
+  const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`;
+  // Bing Image Creator: DALL-E-powered, free with a Microsoft account, prompt pre-filled
+  const bingUrl         = `https://www.bing.com/images/create?q=${encodeURIComponent(prompt)}`;
 
   const frame = document.getElementById('img-frame');
+  let timer = null, deadline = null;
 
   const showFallback = (msg) => {
     clearInterval(timer);
     clearTimeout(deadline);
     frame.innerHTML = `
-      <div class=”image-placeholder”>
+      <div class="image-placeholder">
         <p>${msg}</p>
-        <a class=”open-link” href=”${url}” target=”_blank” rel=”noopener noreferrer”>
-          Open in browser ↗
-        </a>
+        <p class="fallback-prompt">"${esc(prompt)}"</p>
+        <div class="fallback-actions">
+          <a class="open-link" href="${bingUrl}" target="_blank" rel="noopener noreferrer">
+            Try on Bing (DALL&#8209;E) ↗
+          </a>
+          <a class="open-link" href="${pollinationsUrl}" target="_blank" rel="noopener noreferrer">
+            Try on Pollinations ↗
+          </a>
+          <button class="open-link" onclick="copyCurrentPrompt()">
+            Copy Prompt
+          </button>
+        </div>
       </div>`;
     btn.disabled    = false;
     btn.textContent = '✨ Try Again';
   };
 
   let secs = 0;
-  const timer = setInterval(() => {
+  timer = setInterval(() => {
     secs++;
     const el = frame.querySelector('.loading-secs');
     if (el) el.textContent = `${secs}s`;
   }, 1000);
 
-  // Hard timeout — generation rarely takes more than 90 s
-  const deadline = setTimeout(() => {
+  deadline = setTimeout(() => {
     img.src = '';
-    showFallback('Timed out after 90s &mdash; try opening in the browser');
+    showFallback('Timed out after 90s');
   }, 90000);
 
   frame.innerHTML = `
-    <div class=”image-placeholder”>
-      <div class=”loading-ring”></div>
-      <p>Generating your artwork&hellip; <span class=”loading-secs”>0s</span></p>
+    <div class="image-placeholder">
+      <div class="loading-ring"></div>
+      <p>Generating your artwork&hellip; <span class="loading-secs">0s</span></p>
     </div>`;
 
   const img = new Image();
@@ -837,18 +871,24 @@ function generateImage() {
     frame.appendChild(img);
 
     const cap = document.getElementById('img-caption');
-    cap.textContent = `”${prompt}”`;
+    cap.textContent = `"${prompt}"`;
     cap.classList.add('visible');
 
     btn.disabled    = false;
     btn.textContent = '✨ Generate Again';
   };
 
-  img.onerror = () => {
-    showFallback('Could not load image &mdash; try opening in the browser');
-  };
+  img.onerror = () => showFallback('Auto&#8209;generation blocked or unavailable');
 
-  img.src = url;
+  img.src = pollinationsUrl;
+}
+
+function copyCurrentPrompt() {
+  navigator.clipboard.writeText(currentPrompt).then(() => {
+    showToast('Prompt copied to clipboard!');
+  }).catch(() => {
+    showToast('Copy failed — select the prompt text manually.');
+  });
 }
 
 /* XSS-safe text for innerHTML */
