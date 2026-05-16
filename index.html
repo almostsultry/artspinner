@@ -967,11 +967,15 @@ class Reel {
 
       this._fold.style.transition = 'none';
       this._in.style.transition   = 'none';
-      requestAnimationFrame(() => requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        // Frame 1: snap to reset positions (browser commits these before next flip)
         this._fold.style.transform = 'rotateX(0deg)';
         this._in.style.transform   = 'rotateX(90deg)';
-        onDone && onDone();
-      }));
+        requestAnimationFrame(() => {
+          // Frame 2: reset is now painted — safe to start the next animation
+          onDone && onDone();
+        });
+      });
     }, duration);
   }
 
