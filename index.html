@@ -830,7 +830,6 @@
     <div class="settings-row">
       <label class="settings-label" for="service-select">Image service</label>
       <select class="settings-select" id="service-select">
-        <option value="pollinations">Pollinations AI &mdash; free, no key, FLUX, 1920&times;1080</option>
         <option value="stablehorde">Stable Horde &mdash; free, no key (slow, upscaled ~2K)</option>
         <option value="huggingface">Hugging Face &mdash; free token, FLUX, 1920&times;1080</option>
         <option value="together">Together AI &mdash; key required, FLUX, 1920&times;1080</option>
@@ -1121,7 +1120,6 @@ const SK_KEY     = 'artspinner-key';
 const SK_UPSCAYL = 'artspinner-upscayl';
 
 const SERVICE_HINTS = {
-  pollinations: 'No account or key needed. Powered by FLUX &mdash; results in ~10&ndash;30s at 1920&times;1080. Images are publicly accessible via their URL.',
   stablehorde:  'No key needed. Community GPU network &mdash; expect 1&ndash;5 min. Generates at 576&times;320 then free RealESRGAN &times;4 upscale to ~2304&times;1280.',
   huggingface:  'Free token from <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener">huggingface.co/settings/tokens</a> &mdash; create a token with <em>Inference</em> access. FLUX.1-schnell at 1920&times;1080.',
   together:     'API key from <a href="https://api.together.xyz/settings/api-keys" target="_blank" rel="noopener">api.together.xyz</a>. FLUX.1-schnell at 1920&times;1080.',
@@ -1133,7 +1131,7 @@ function initSettings() {
   const toggle = document.getElementById('settings-toggle');
   const panel  = document.getElementById('settings-panel');
 
-  sel.value   = localStorage.getItem(SK_SVC) || 'pollinations';
+  sel.value   = localStorage.getItem(SK_SVC) || 'stablehorde';
   input.value = localStorage.getItem(SK_KEY) || '';
   applyService(sel.value);
 
@@ -1157,7 +1155,7 @@ function initSettings() {
 }
 
 function isKeylessService(svc) {
-  return svc === 'stablehorde' || svc === 'pollinations';
+  return svc === 'stablehorde';
 }
 
 function applyUpscayl(on) {
@@ -1179,7 +1177,7 @@ async function generateImage() {
   const [media, influence, style] = results;
   if (!media) return;
 
-  const svc    = localStorage.getItem(SK_SVC) || 'pollinations';
+  const svc    = localStorage.getItem(SK_SVC) || 'stablehorde';
   const apiKey = (localStorage.getItem(SK_KEY) || '').trim();
 
   if (!isKeylessService(svc) && !apiKey) {
@@ -1245,9 +1243,7 @@ async function generateImage() {
 
   try {
     let imgEl;
-    if (svc === 'pollinations') {
-      imgEl = await genPollinations(prompt, myId, setStatus);
-    } else if (svc === 'huggingface') {
+    if (svc === 'huggingface') {
       imgEl = await genHuggingFace(prompt, apiKey, myId, setStatus);
     } else if (svc === 'together') {
       imgEl = await genTogether(prompt, apiKey, myId, setStatus);
@@ -1265,10 +1261,10 @@ function downloadCurrentImage() {
   _triggerDownload(`art-spinner-${_promptSlug()}.png`);
 }
 
-async function upscaleWithUpscayl() {
+function upscaleWithUpscayl() {
   if (!currentImgEl) return;
   const filename = `art-spinner-${_promptSlug()}.png`;
-  await _triggerDownload(filename);
+  _triggerDownload(filename);
   showToast(`Saved "${filename}" — open it in Upscayl to upscale.`);
 }
 
@@ -1279,50 +1275,14 @@ function _promptSlug() {
     .replace(/^-|-$/g, '')) || String(Date.now());
 }
 
-async function _triggerDownload(filename) {
-  let href = currentImgEl.src;
-
-  // Remote URLs (e.g. Pollinations) can't be downloaded directly cross-origin;
-  // fetch to a local blob URL first so the browser downloads instead of navigating.
-  if (href.startsWith('http')) {
-    try {
-      const res  = await fetch(href);
-      const blob = await res.blob();
-      href = URL.createObjectURL(blob);
-      setTimeout(() => URL.revokeObjectURL(href), 0);
-    } catch {
-      // If fetch fails just try the direct link — may navigate instead of download
-    }
-  }
-
+function _triggerDownload(filename) {
   const a = document.createElement('a');
-  a.href = href;
+  a.href = currentImgEl.src;
   a.download = filename;
   a.style.display = 'none';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-}
-
-/* ── Pollinations AI ── */
-function genPollinations(prompt, myId, setStatus) {
-  setStatus('Generating with FLUX…', 'Pollinations AI — please wait');
-
-  const url = 'https://image.pollinations.ai/prompt/' +
-    encodeURIComponent(prompt);
-
-  return new Promise((resolve, reject) => {
-    const img = document.createElement('img');
-    img.referrerPolicy = 'no-referrer';
-    img.onload = () => {
-      if (genId !== myId) reject(new Error('cancelled'));
-      else resolve(img);
-    };
-    img.onerror = () => reject(
-      new Error('Pollinations AI refused the request — try Stable Horde instead')
-    );
-    img.src = url;
-  });
 }
 
 /* ── Hugging Face ── */
