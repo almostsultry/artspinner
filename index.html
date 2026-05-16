@@ -765,47 +765,65 @@ function onAllStopped() {
 /* ──────────────────────────────────────────
    IMAGE GENERATION (pollinations.ai — free, no key)
 ────────────────────────────────────────── */
-function generateImage() {
+async function generateImage() {
   const [media, influence, style] = results;
   if (!media) return;
 
   const btn = document.getElementById('gen-btn');
-  btn.disabled   = true;
+  btn.disabled    = true;
   btn.textContent = 'Generating…';
 
-  const prompt  = `Create a ${media} inspired by ${influence} in the style of ${style}. Highly detailed, artistic masterpiece, beautiful composition, professional quality.`;
-  const seed    = Math.floor(Math.random() * 999999);
-  const url     = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=768&nologo=true&seed=${seed}`;
+  const prompt = `Create a ${media} inspired by ${influence} in the style of ${style}. Highly detailed, artistic masterpiece, beautiful composition, professional quality.`;
+  const seed   = Math.floor(Math.random() * 999999);
+  const url    = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=768&model=flux&seed=${seed}`;
 
-  document.getElementById('img-frame').innerHTML = `
-    <div class="image-placeholder">
-      <div class="loading-ring"></div>
-      <p>Generating your artwork&hellip;</p>
+  const frame = document.getElementById('img-frame');
+  let secs = 0;
+  const timer = setInterval(() => {
+    secs++;
+    const el = frame.querySelector('.loading-secs');
+    if (el) el.textContent = `${secs}s`;
+  }, 1000);
+
+  frame.innerHTML = `
+    <div class=”image-placeholder”>
+      <div class=”loading-ring”></div>
+      <p>Generating your artwork&hellip; <span class=”loading-secs”>0s</span></p>
     </div>`;
 
-  const img  = new Image();
-  img.onload = () => {
-    const frame = document.getElementById('img-frame');
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
+
+    const blob = await res.blob();
+    if (!blob.type.startsWith('image/')) throw new Error('Response was not an image');
+
+    clearInterval(timer);
+
+    const objUrl = URL.createObjectURL(blob);
     frame.innerHTML = '';
+    const img = document.createElement('img');
+    img.onload = () => URL.revokeObjectURL(objUrl);
+    img.src = objUrl;
     frame.appendChild(img);
 
     const cap = document.getElementById('img-caption');
-    cap.textContent = `“${prompt}”`;
+    cap.textContent = `”${prompt}”`;
     cap.classList.add('visible');
 
     btn.disabled    = false;
     btn.textContent = '✨ Generate Again';
-  };
-  img.onerror = () => {
-    document.getElementById('img-frame').innerHTML = `
-      <div class="image-placeholder">
-        <p>Generation failed &mdash; please try again</p>
+  } catch (err) {
+    clearInterval(timer);
+    const msg = err.message || 'Unknown error';
+    frame.innerHTML = `
+      <div class=”image-placeholder”>
+        <p>Generation failed &mdash; ${esc(msg)}</p>
       </div>`;
     btn.disabled    = false;
     btn.textContent = '✨ Generate Image';
-    showToast('Image generation failed. Check your connection and try again.');
-  };
-  img.src = url;
+    showToast(`Image generation failed: ${msg}`);
+  }
 }
 
 /* XSS-safe text for innerHTML */
