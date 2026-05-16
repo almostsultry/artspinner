@@ -23,7 +23,7 @@ Clicking **Generate Image** sends that prompt to [Pollinations.ai](https://polli
 No install or build step required. Open `index.html` directly in a browser, or serve it with any static file server:
 
 ```bash
-npx serve . -l 3000
+npx serve . -p 3000
 # then open http://localhost:3000
 ```
 
