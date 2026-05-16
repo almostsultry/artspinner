@@ -227,7 +227,7 @@
       pointer-events: none;
     }
 
-    /* Locked glow */
+    /* Locked glow (post-spin cosmetic) */
     .reel-col.locked .flap-cell {
       animation: flap-win-glow .85s ease-in-out 3;
     }
@@ -237,6 +237,57 @@
       50%      { box-shadow: inset 0 4px 18px rgba(0,0,0,.55),
                              0 0 0 1px rgba(150,110,10,.6),
                              0 0 18px rgba(150,110,10,.28); }
+    }
+
+    /* ── User-controlled lock ── */
+    .reel-lock-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      margin: 6px auto 0;
+      padding: 4px 12px;
+      background: rgba(0,0,0,.18);
+      border: 1px solid rgba(180,140,60,.28);
+      border-radius: 3px;
+      color: rgba(220,185,100,.45);
+      font-size: .55rem;
+      letter-spacing: .06em;
+      font-family: inherit;
+      cursor: pointer;
+      transition: color .18s, border-color .18s, background .18s;
+      white-space: nowrap;
+    }
+    .reel-lock-btn:hover {
+      color: rgba(240,205,120,.8);
+      border-color: rgba(200,160,70,.55);
+      background: rgba(0,0,0,.28);
+    }
+    .reel-lock-btn svg { flex-shrink: 0; }
+
+    /* User-locked state — amber ring + clickable cell */
+    .reel-col.user-locked .reel-lock-btn {
+      color: rgba(255,210,80,1);
+      border-color: rgba(210,165,45,.9);
+      background: rgba(80,50,0,.35);
+    }
+    .reel-col.user-locked .flap-cell {
+      cursor: pointer;
+      outline: 2px solid rgba(200,155,40,.55);
+      outline-offset: 2px;
+    }
+    .reel-col.user-locked .flap-cell:hover {
+      outline-color: rgba(220,175,60,.85);
+    }
+    .reel-col.user-locked .flap-cell::after {
+      content: '▶';
+      position: absolute;
+      right: 8px;
+      bottom: 7px;
+      font-size: .62rem;
+      color: rgba(220,175,60,.6);
+      pointer-events: none;
+      z-index: 20;
     }
 
     /* ══════════════════════════════════════
@@ -734,6 +785,7 @@
       .reel-label, .badge-label { font-size: .44rem; }
       .plate-badge { width: 82px; }
       .badge-title { font-size: 0.82rem; }
+      .reel-lock-btn { font-size: .44rem; padding: 3px 8px; }
     }
   </style>
 </head>
@@ -922,8 +974,9 @@ class Reel {
     this.items = items;
     this.N     = items.length;
     this.idx   = Math.floor(Math.random() * this.N);
-    this.spinning = false;
-    this.locked   = false;
+    this.spinning   = false;
+    this.locked     = false;
+    this.userLocked = false;
 
     const cell = this.col.querySelector('.flap-cell');
     this._upper = cell.querySelector('.flap-upper .flap-text');
@@ -938,9 +991,49 @@ class Reel {
     this._lower.textContent = v;
     this._foldT.textContent = v;
     this._inT.textContent   = v;
+
+    // Lock button
+    const btn = document.createElement('button');
+    btn.className = 'reel-lock-btn';
+    btn.setAttribute('aria-label', 'Lock this reel');
+    btn.innerHTML = this._lockIcon(false) + '<span>LOCK</span>';
+    btn.addEventListener('click', () => this.toggleUserLock());
+    this.col.appendChild(btn);
+    this._lockBtn = btn;
+
+    // Click cell while locked → step to next value
+    cell.addEventListener('click', () => {
+      if (this.userLocked && !this.spinning) this._stepForward();
+    });
   }
 
   getValue() { return this.items[this.idx]; }
+
+  _lockIcon(locked) {
+    return locked
+      ? `<svg width="11" height="13" viewBox="0 0 11 13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+           <rect x="1" y="5.5" width="9" height="7" rx="1.5" fill="none"/>
+           <path d="M3 5.5V4a2.5 2.5 0 0 1 5 0v1.5"/>
+           <circle cx="5.5" cy="9" r="1" fill="currentColor" stroke="none"/>
+         </svg>`
+      : `<svg width="11" height="13" viewBox="0 0 11 13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+           <rect x="1" y="5.5" width="9" height="7" rx="1.5" fill="none"/>
+           <path d="M3 5.5V4a2.5 2.5 0 0 1 5 0"/>
+         </svg>`;
+  }
+
+  toggleUserLock() {
+    this.userLocked = !this.userLocked;
+    this.col.classList.toggle('user-locked', this.userLocked);
+    this._lockBtn.innerHTML = this._lockIcon(this.userLocked) + '<span>' + (this.userLocked ? 'LOCKED' : 'LOCK') + '</span>';
+    this._lockBtn.setAttribute('aria-label', this.userLocked ? 'Unlock this reel' : 'Lock this reel');
+  }
+
+  _stepForward() {
+    if (this.spinning) return;
+    this.spinning = true;
+    this._flip((this.idx + 1) % this.N, 260, () => { this.spinning = false; });
+  }
 
   /* Single flip from current idx to nextIdx.
      Both halves animate simultaneously so each always shows a mid-flip
@@ -1087,12 +1180,18 @@ function startSpin() {
 
   const targets = DATA.map(d => Math.floor(Math.random() * d.length));
   let stopped = 0;
+  const total  = reels.length;
 
   reels.forEach((reel, i) => {
-    reel.spin(SPIN_DURATIONS[i], targets[i], value => {
-      results[i] = value;
-      if (++stopped === 3) onAllStopped();
-    });
+    if (reel.userLocked) {
+      results[i] = reel.getValue();
+      if (++stopped === total) onAllStopped();
+    } else {
+      reel.spin(SPIN_DURATIONS[i], targets[i], value => {
+        results[i] = value;
+        if (++stopped === total) onAllStopped();
+      });
+    }
   });
 }
 
