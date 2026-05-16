@@ -888,11 +888,58 @@ function generateImage() {
 
   polImg.onerror = () => {
     if (genId !== myId) return;
-    // pollinations blocked — fall through to Stable Horde immediately
-    setStatus('Joining AI queue…', 'Using community GPU network');
-    tryStableHorde(prompt, myId, frame, setStatus)
-      .then(imgEl => displaySuccess(imgEl))
-      .catch(err  => showFallback(esc(err.message)));
+
+    // Pollinations is reachable by direct browser navigation but blocked for
+    // cross-origin <img> requests.  Opening the URL in a new tab:
+    //   1. triggers generation on the origin server
+    //   2. Cloudflare caches the result at its CDN edge
+    // Subsequent <img> requests hit that CDN edge (different IPs, not blocked).
+    // window.open() is allowed here because we're still inside the user-gesture
+    // window from the original "Generate Image" click.
+    const tab = window.open(pollinationsUrl, '_blank');
+
+    if (!tab) {
+      // Popup was blocked — fall back to manual flow
+      showFallback('Popup blocked by browser');
+      return;
+    }
+
+    setStatus('Generating via Pollinations…', 'New tab opened — auto-loading when ready');
+
+    let attempt = 0;
+    const MAX = 18; // 18 × 10 s = 3 min
+
+    const retry = () => {
+      if (genId !== myId) return;
+      attempt++;
+
+      const r = new Image();
+
+      r.onload = () => {
+        if (genId !== myId) return;
+        try { tab.close(); } catch (_) {}
+        displaySuccess(r);
+      };
+
+      r.onerror = () => {
+        if (genId !== myId) return;
+        if (attempt < MAX) {
+          setStatus('Waiting for image…', `${attempt * 10}s — you can close the Pollinations tab`);
+          setTimeout(retry, 10000);
+        } else {
+          // CDN didn't warm in time — hand off to Stable Horde
+          try { tab.close(); } catch (_) {}
+          setStatus('Joining AI queue…', 'Using community GPU network');
+          tryStableHorde(prompt, myId, frame, setStatus)
+            .then(imgEl => displaySuccess(imgEl))
+            .catch(err  => showFallback(esc(err.message)));
+        }
+      };
+
+      r.src = pollinationsUrl; // same URL = CDN cache hit once warm
+    };
+
+    setTimeout(retry, 15000); // give origin ~15 s to generate before first check
   };
 
   polImg.src = pollinationsUrl;
