@@ -346,7 +346,7 @@
     }
     .image-frame {
       width: 100%;
-      aspect-ratio: 4 / 3;
+      aspect-ratio: 16 / 9;
       background: #030112;
       border-radius: 12px;
       border: 3px solid var(--gold-dark);
@@ -441,6 +441,74 @@
     }
     .image-caption.visible { display: block; }
 
+    /* ── Settings panel ── */
+    .gen-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.7rem;
+      margin-top: 1.6rem;
+    }
+    .settings-toggle {
+      width: 34px; height: 34px;
+      background: transparent;
+      border: 1px solid var(--gold-dark);
+      border-radius: 50%;
+      color: var(--gold-dark);
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+    .settings-toggle:hover { border-color: var(--gold); color: var(--gold); }
+    .settings-toggle.active { border-color: var(--gold); color: var(--gold); }
+
+    .settings-panel {
+      display: none;
+      background: rgba(8,3,18,0.97);
+      border: 1px solid var(--gold-dark);
+      border-radius: 12px;
+      padding: 1.2rem 1.4rem 1rem;
+      margin-top: 1rem;
+      text-align: left;
+      width: 100%;
+    }
+    .settings-panel.open { display: block; }
+    .settings-row { margin-bottom: 0.9rem; }
+    .settings-row:last-child { margin-bottom: 0; }
+    .settings-label {
+      display: block;
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold-dark);
+      margin-bottom: 0.35rem;
+    }
+    .settings-select, .settings-input {
+      width: 100%;
+      background: rgba(0,0,0,0.6);
+      border: 1px solid var(--gold-dark);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.82rem;
+      padding: 0.45rem 0.7rem;
+    }
+    .settings-select:focus, .settings-input:focus {
+      outline: none; border-color: var(--gold);
+    }
+    .settings-hint {
+      display: block;
+      font-size: 0.63rem;
+      color: var(--gold-dark);
+      opacity: 0.75;
+      margin-top: 0.3rem;
+      line-height: 1.5;
+    }
+    .settings-hint a { color: var(--gold); text-decoration: none; }
+    .settings-hint a:hover { text-decoration: underline; }
+
     /* ── Error toast ── */
     .toast {
       position: fixed;
@@ -525,7 +593,28 @@
   <div class="prompt-text dim" id="prompt-text">
     Pull the lever to spin your fate&hellip;
   </div>
-  <button class="generate-btn" id="gen-btn">&#10024; Generate Image</button>
+
+  <div class="gen-row">
+    <button class="generate-btn" id="gen-btn">&#10024; Generate Image</button>
+    <button class="settings-toggle" id="settings-toggle" title="Image generation settings">&#9881;</button>
+  </div>
+
+  <div class="settings-panel" id="settings-panel">
+    <div class="settings-row">
+      <label class="settings-label" for="service-select">Image service</label>
+      <select class="settings-select" id="service-select">
+        <option value="stablehorde">Stable Horde &mdash; free, no key (slow, ~1344&times;768)</option>
+        <option value="huggingface">Hugging Face &mdash; free token, FLUX, 1920&times;1080</option>
+        <option value="together">Together AI &mdash; free key, FLUX, 1920&times;1080</option>
+      </select>
+    </div>
+    <div class="settings-row" id="key-row" style="display:none">
+      <label class="settings-label" for="api-key-input">API token / key</label>
+      <input class="settings-input" type="password" id="api-key-input"
+             placeholder="Paste your token here&hellip;" autocomplete="off">
+      <span class="settings-hint" id="service-hint"></span>
+    </div>
+  </div>
 </div>
 
 <div class="image-section" id="img-section">
@@ -736,6 +825,7 @@ function init() {
 
   document.getElementById('lever-wrap').addEventListener('click', handleLever);
   document.getElementById('gen-btn').addEventListener('click', generateImage);
+  initSettings();
 }
 
 function handleLever() {
@@ -806,35 +896,78 @@ function onAllStopped() {
 }
 
 /* ──────────────────────────────────────────
+   SETTINGS
+────────────────────────────────────────── */
+const SK_SVC = 'artspinner-service';
+const SK_KEY = 'artspinner-key';
+
+const SERVICE_HINTS = {
+  stablehorde: 'No key needed. Community GPU network — expect 1&ndash;5 min. Output ~1344&times;768.',
+  huggingface: 'Free token from <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener">huggingface.co/settings/tokens</a> &mdash; create a token with <em>Inference</em> access. FLUX.1-schnell at 1920&times;1080.',
+  together:    'Free key from <a href="https://api.together.xyz/settings/api-keys" target="_blank" rel="noopener">api.together.xyz</a>. FLUX.1-schnell at 1920&times;1080.',
+};
+
+function initSettings() {
+  const sel    = document.getElementById('service-select');
+  const input  = document.getElementById('api-key-input');
+  const toggle = document.getElementById('settings-toggle');
+  const panel  = document.getElementById('settings-panel');
+
+  sel.value   = localStorage.getItem(SK_SVC) || 'stablehorde';
+  input.value = localStorage.getItem(SK_KEY) || '';
+  applyService(sel.value);
+
+  toggle.addEventListener('click', () => {
+    const open = panel.classList.toggle('open');
+    toggle.classList.toggle('active', open);
+  });
+  sel.addEventListener('change', () => {
+    localStorage.setItem(SK_SVC, sel.value);
+    applyService(sel.value);
+  });
+  input.addEventListener('input', () => localStorage.setItem(SK_KEY, input.value.trim()));
+}
+
+function applyService(svc) {
+  document.getElementById('key-row').style.display   = svc === 'stablehorde' ? 'none' : '';
+  document.getElementById('service-hint').innerHTML  = SERVICE_HINTS[svc] || '';
+}
+
+/* ──────────────────────────────────────────
    IMAGE GENERATION
-   1. pollinations.ai via <img> (fast, no key, no CORS header)
-   2. Stable Horde (stablehorde.net) if pollinations fails —
-      free distributed GPU network, public anon key, returns base64
-   3. Manual fallback buttons if both fail
+   - Stable Horde : free, no key, ~1344x768, slow queue
+   - Hugging Face : free token, FLUX.1-schnell, 1920x1080
+   - Together AI  : free key,   FLUX.1-schnell, 1920x1080
 ────────────────────────────────────────── */
 
-let genId = 0; // incremented on each new generation to cancel stale polls
-
+let genId = 0;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-function generateImage() {
+async function generateImage() {
   const [media, influence, style] = results;
   if (!media) return;
+
+  const svc    = localStorage.getItem(SK_SVC) || 'stablehorde';
+  const apiKey = (localStorage.getItem(SK_KEY) || '').trim();
+
+  if (svc !== 'stablehorde' && !apiKey) {
+    document.getElementById('settings-panel').classList.add('open');
+    document.getElementById('settings-toggle').classList.add('active');
+    showToast('Enter your API token in settings first.');
+    return;
+  }
 
   genId++;
   const myId = genId;
 
-  const btn = document.getElementById('gen-btn');
+  const btn  = document.getElementById('gen-btn');
   btn.disabled    = true;
   btn.textContent = 'Generating…';
 
-  const prompt          = `${media}, inspired by ${influence}, ${style} style, highly detailed`;
-  currentPrompt         = prompt;
-  const encoded         = encodeURIComponent(prompt);
-  // Both endpoints shown in the manual-fallback buttons
-  const pollinationsUrl = `https://enter.pollinations.ai/prompt/${encoded}`;
-  const bingUrl         = `https://www.bing.com/images/create?q=${encoded}`;
-  const frame           = document.getElementById('img-frame');
+  const prompt  = `${media}, inspired by ${influence}, ${style} style, highly detailed`;
+  currentPrompt = prompt;
+  const bingUrl = `https://www.bing.com/images/create?q=${encodeURIComponent(prompt)}`;
+  const frame   = document.getElementById('img-frame');
 
   const setStatus = (main, sub = '') => {
     const m = frame.querySelector('.loading-status');
@@ -852,9 +985,6 @@ function generateImage() {
         <div class="fallback-actions">
           <a class="open-link" href="${bingUrl}" target="_blank" rel="noopener noreferrer">
             Try on Bing (DALL&#8209;E) ↗
-          </a>
-          <a class="open-link" href="${pollinationsUrl}" target="_blank" rel="noopener noreferrer">
-            Try on Pollinations ↗
           </a>
           <button class="open-link" onclick="copyCurrentPrompt()">Copy Prompt</button>
         </div>
@@ -877,144 +1007,145 @@ function generateImage() {
     <div class="image-placeholder">
       <div class="loading-ring"></div>
       <p class="loading-status">Generating your artwork…</p>
-      <p class="loading-sub">Trying fast generator</p>
+      <p class="loading-sub"></p>
     </div>`;
 
-  // ── Phase 1: race both pollinations endpoints simultaneously ──
-  // image.pollinations.ai  = anonymous-only (rejects logged-in users with JSON error)
-  // enter.pollinations.ai  = authenticated users (requires being logged in)
-  // Whichever returns a valid image first wins; both failing moves to Phase 2.
-  const polUrls = [
-    `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`,
-    `https://enter.pollinations.ai/prompt/${encodeURIComponent(prompt)}`
-  ];
-
-  let polFails = 0;
-  let polDone  = false;
-
-  const onPolLoad = (img) => {
-    if (polDone || genId !== myId) return;
-    polDone = true;
-    displaySuccess(img);
-  };
-
-  const onPolError = () => {
-    if (polDone || genId !== myId) return;
-    polFails++;
-    if (polFails < polUrls.length) return; // still waiting on the other one
-    polDone = true;
-
-    // Both endpoints failed via <img> — open them in new tabs to warm the
-    // Cloudflare CDN cache, then poll the same URLs until one loads.
-    const tabs = polUrls.map(u => { try { return window.open(u, '_blank'); } catch { return null; } });
-    const anyTab = tabs.some(Boolean);
-
-    if (!anyTab) { showFallback('Popup blocked by browser'); return; }
-
-    setStatus('Generating via Pollinations…', 'New tabs opened — auto-loading when ready');
-
-    let attempt = 0;
-    const MAX = 18; // 18 × 10 s = 3 min
-
-    const retry = () => {
-      if (genId !== myId) return;
-      attempt++;
-
-      let retryDone  = false;
-      let retryFails = 0;
-
-      polUrls.forEach(url => {
-        const r = new Image();
-        r.onload = () => {
-          if (retryDone || genId !== myId) return;
-          retryDone = true;
-          tabs.forEach(t => { try { t?.close(); } catch {} });
-          displaySuccess(r);
-        };
-        r.onerror = () => {
-          if (retryDone) return;
-          retryFails++;
-          if (retryFails < polUrls.length) return;
-          // All URLs still failing
-          if (attempt < MAX) {
-            setStatus('Waiting for image…', `${attempt * 10}s — you can close the Pollinations tabs`);
-            setTimeout(retry, 10000);
-          } else {
-            tabs.forEach(t => { try { t?.close(); } catch {} });
-            setStatus('Joining AI queue…', 'Using community GPU network');
-            tryStableHorde(prompt, myId, frame, setStatus)
-              .then(imgEl => displaySuccess(imgEl))
-              .catch(err  => showFallback(esc(err.message)));
-          }
-        };
-        r.src = url;
-      });
-    };
-
-    setTimeout(retry, 15000); // give origin ~15 s to generate before first check
-  };
-
-  // Fire both requests
-  polUrls.forEach(url => {
-    const img = new Image();
-    img.onload  = () => onPolLoad(img);
-    img.onerror = onPolError;
-    img.src = url;
-  });
+  try {
+    let imgEl;
+    if (svc === 'huggingface') {
+      imgEl = await genHuggingFace(prompt, apiKey, myId, setStatus);
+    } else if (svc === 'together') {
+      imgEl = await genTogether(prompt, apiKey, myId, setStatus);
+    } else {
+      imgEl = await genStableHorde(prompt, myId, setStatus);
+    }
+    displaySuccess(imgEl);
+  } catch (err) {
+    if (genId === myId) showFallback(esc(err.message));
+  }
 }
 
-async function tryStableHorde(prompt, myId, frame, setStatus) {
-  const ANON_KEY = '0000000000'; // Stable Horde public anon key
+/* ── Hugging Face Inference API ── */
+async function genHuggingFace(prompt, token, myId, setStatus) {
+  setStatus('Generating with FLUX…', 'Hugging Face — may take 20–60s on cold start');
 
-  const submitRes = await fetch('https://stablehorde.net/api/v2/generate/async', {
+  const attempt = async () => {
+    const res = await fetch(
+      'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell',
+      {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          inputs: prompt,
+          parameters: { width: 1920, height: 1080, num_inference_steps: 4 }
+        })
+      }
+    );
+
+    if (res.status === 503) {
+      const body    = await res.json().catch(() => ({}));
+      const waitSec = Math.ceil(body.estimated_time || 20);
+      setStatus('Model loading…', `~${waitSec}s — warming up`);
+      await sleep(waitSec * 1000);
+      return attempt();
+    }
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || `HTTP ${res.status}`);
+    }
+
+    const blob = await res.blob();
+    if (!blob.type.startsWith('image/')) throw new Error('Non-image response — check your token');
+    return blobToImg(blob);
+  };
+
+  return attempt();
+}
+
+/* ── Together AI ── */
+async function genTogether(prompt, token, myId, setStatus) {
+  setStatus('Generating with FLUX…', 'Together AI');
+
+  const res = await fetch('https://api.together.xyz/v1/images/generations', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'apikey': ANON_KEY },
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'black-forest-labs/FLUX.1-schnell-Free',
+      prompt,
+      width: 1920, height: 1080,
+      steps: 4, n: 1,
+      response_format: 'b64_json'
+    })
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error?.message || `HTTP ${res.status}`);
+  }
+
+  const data = await res.json();
+  const b64  = data.data?.[0]?.b64_json;
+  if (!b64) throw new Error('No image data in Together AI response');
+  return base64ToImg(b64);
+}
+
+/* ── Stable Horde (free, no key) — ~1344×768 16:9 ── */
+async function genStableHorde(prompt, myId, setStatus) {
+  setStatus('Joining AI queue…', 'Stable Horde community GPUs');
+
+  const res = await fetch('https://stablehorde.net/api/v2/generate/async', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': '0000000000' },
     body: JSON.stringify({
       prompt,
-      params: { width: 512, height: 512, steps: 20, n: 1,
+      params: { width: 1344, height: 768, steps: 20, n: 1,
                 sampler_name: 'k_euler_a', cfg_scale: 7 },
       r2: false
     })
   });
 
-  if (!submitRes.ok) throw new Error(`Queue error: HTTP ${submitRes.status}`);
-  const { id } = await submitRes.json();
+  if (!res.ok) throw new Error(`Stable Horde queue error: HTTP ${res.status}`);
+  const { id } = await res.json();
   if (!id) throw new Error('No job ID from Stable Horde');
 
-  for (let i = 0; i < 72; i++) {       // up to 6 minutes (72 × 5 s)
-    if (genId !== myId) return;         // cancelled by a new generation
-
+  for (let i = 0; i < 72; i++) {
+    if (genId !== myId) return;
     await sleep(5000);
 
     const check = await fetch(`https://stablehorde.net/api/v2/generate/check/${id}`)
       .then(r => r.json());
-
     if (check.faulted) throw new Error('Job faulted on Stable Horde');
 
     if (check.done) {
       const status = await fetch(`https://stablehorde.net/api/v2/generate/status/${id}`)
         .then(r => r.json());
       const b64 = status.generations?.[0]?.img;
-      if (!b64) throw new Error('No image data in response');
+      if (!b64) throw new Error('No image in Stable Horde response');
       return base64ToImg(b64);
     }
 
-    // Show live queue info
     const parts = [];
     if (check.queue_position > 0) parts.push(`queue: ${check.queue_position}`);
     if (check.wait_time > 0)      parts.push(`~${check.wait_time}s`);
     setStatus('Generating…', parts.join(' · ') || 'working…');
   }
 
-  throw new Error('Timed out after 6 minutes');
+  throw new Error('Stable Horde timed out after 6 minutes');
+}
+
+function blobToImg(blob) {
+  const url = URL.createObjectURL(blob);
+  const img = document.createElement('img');
+  img.onload = () => URL.revokeObjectURL(url);
+  img.src = url;
+  return img;
 }
 
 function base64ToImg(b64) {
-  // Detect format from magic bytes encoded in base64
   let mime = 'image/png';
   if (b64.startsWith('/9j/'))   mime = 'image/jpeg';
   if (b64.startsWith('UklGR')) mime = 'image/webp';
-
   const img = document.createElement('img');
   img.src = `data:${mime};base64,${b64}`;
   return img;
