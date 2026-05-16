@@ -10,33 +10,39 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --s1: #141414;
-      --s2: #1e1e1e;
-      --s3: #2a2a2a;
-      --s4: #383838;
-      --s5: #505050;
-      --b1: #3e2800;
-      --b2: #7a5a08;
-      --b3: #a07818;
-      --b4: #b8900c;
-      --b5: #cfa020;
-      --b6: #e8bc38;
-      --b7: #f4d060;
-      --text: #ccc4ac;
-      --bg: #0a0a0a;
+      /* Aluminum tones */
+      --al-edge:  #6e6e6e;
+      --al-dark:  #a8a8a8;
+      --al-mid:   #d0d0d0;
+      --al-peak:  #e4e4e4;
+      --al-hi:    #f0f0f0;
+      /* Brass tones */
+      --br-shadow: #3e2800;
+      --br-dark:   #7a5a06;
+      --br-mid:    #a87e0e;
+      --br-base:   #c09820;
+      --br-light:  #d4ae2c;
+      --br-hi:     #e8c840;
+      /* Reel window (cream card stock) */
+      --win-bg:    #ede8d8;
+      --win-fade:  rgba(237,232,216,1);
+      --win-text:  #1a1000;
+      /* Page */
+      --bg:        #0e0e0e;
+      --text-page: #ccc4ac;
       --item-h: 48px;
     }
 
     body {
       background: var(--bg);
-      background-image: radial-gradient(ellipse 120% 50% at 50% -10%, #1a1a1a 0%, #0a0a0a 60%);
+      background-image: radial-gradient(ellipse 130% 60% at 50% 10%, #1c1c1c 0%, #0e0e0e 65%);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       padding: 2.5rem 1rem 6rem;
       font-family: 'Oswald', sans-serif;
-      color: var(--text);
+      color: var(--text-page);
     }
 
     /* ── Header ── */
@@ -46,140 +52,165 @@
     }
     header h1 {
       font-family: 'Playfair Display', serif;
-      font-size: clamp(2.2rem, 6vw, 3.8rem);
-      color: var(--b6);
+      font-size: clamp(2rem, 5.5vw, 3.6rem);
+      color: var(--br-hi);
       text-shadow:
-        0 2px 3px rgba(0,0,0,0.95),
-        0 -1px 0 rgba(244,208,96,0.15),
-        0 0 50px rgba(160,120,24,0.2);
+        0 2px 4px rgba(0,0,0,0.95),
+        0 -1px 0 rgba(240,200,64,0.12),
+        0 0 50px rgba(160,120,20,0.18);
       letter-spacing: 0.08em;
     }
     header p {
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       letter-spacing: 0.3em;
       text-transform: uppercase;
-      color: var(--b2);
-      margin-top: 0.5rem;
+      color: var(--br-dark);
+      margin-top: 0.45rem;
       text-shadow: 0 1px 2px rgba(0,0,0,0.9);
     }
 
-    /* ── Machine ── */
+    /* ══════════════════════════════════════
+       MACHINE CYLINDER BODY
+       Gradient simulates a horizontal cylinder:
+       darker at top/bottom edges (surfaces curving
+       away), lighter at the centre face.
+    ══════════════════════════════════════ */
     .machine {
       background:
         repeating-linear-gradient(
-          172deg,
+          0deg,
           transparent 0px, transparent 2px,
-          rgba(255,255,255,0.011) 2px, rgba(255,255,255,0.011) 4px
+          rgba(0,0,0,0.014) 2px, rgba(0,0,0,0.014) 3px
         ),
         linear-gradient(
-          158deg,
-          #2e2e2e 0%, #1e1e1e 22%,
-          #2b2b2b 42%, #1c1c1c 62%,
-          #262626 82%, #202020 100%
+          180deg,
+          var(--al-edge)  0%,
+          var(--al-dark)  7%,
+          var(--al-mid)   18%,
+          #d8d8d8         32%,
+          var(--al-peak)  50%,
+          #d8d8d8         68%,
+          var(--al-mid)   82%,
+          var(--al-dark)  93%,
+          var(--al-edge)  100%
         );
       border-radius: 14px;
-      padding: 1.6rem 1.5rem 1.4rem;
+      padding: 2rem 1.5rem 1.2rem;
       position: relative;
-      box-shadow:
-        0 0 0 1px var(--s1),
-        0 0 0 3px var(--b4),
-        0 0 0 5px var(--b1),
-        0 0 0 7px var(--s1),
-        inset 0 1px 0 rgba(255,255,255,0.06),
-        inset 0 -1px 0 rgba(0,0,0,0.6),
-        0 40px 100px rgba(0,0,0,0.97);
       min-width: min(620px, calc(100vw - 2rem));
-    }
-
-    /* Thin brass inlay bar across the top inside */
-    .machine::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 3px;
-      border-radius: 14px 14px 0 0;
-      background: linear-gradient(90deg,
-        var(--b1) 0%, var(--b5) 20%, var(--b6) 50%, var(--b5) 80%, var(--b1) 100%);
-      opacity: 0.7;
-    }
-
-    /* ── Reels Frame ── */
-    .reels-frame {
-      background:
-        repeating-linear-gradient(
-          90deg,
-          transparent 0px, transparent 3px,
-          rgba(255,255,255,0.006) 3px, rgba(255,255,255,0.006) 4px
-        ),
-        linear-gradient(180deg, #0c0c0c 0%, #101010 100%);
-      border-radius: 8px;
-      border: 1px solid var(--s1);
+      /* Brass inlay border ring + depth */
       box-shadow:
-        inset 0 5px 24px rgba(0,0,0,0.95),
-        inset 0 1px 0 rgba(0,0,0,0.9),
-        0 0 0 1px var(--b1);
-      display: flex;
-      overflow: hidden;
+        0 0 0 1px #444,
+        0 0 0 3px var(--br-base),
+        0 0 0 5px var(--br-shadow),
+        0 0 0 6px #333,
+        inset 0 1px 0 rgba(255,255,255,0.55),
+        inset 0 -1px 0 rgba(0,0,0,0.1),
+        0 40px 100px rgba(0,0,0,0.97),
+        0 10px 30px rgba(0,0,0,0.6);
     }
 
+    /* ══════════════════════════════════════
+       BRASS PLATE
+       Sits flush in the front face of the
+       cylinder, housing the reel windows.
+    ══════════════════════════════════════ */
+    .brass-plate {
+      background:
+        linear-gradient(
+          154deg,
+          #8c6c04 0%, #b08810 15%,
+          #c89e1e 32%, #d4ae28 50%,
+          #c8a01c 68%, #aa8410 84%, #8a6808 100%
+        );
+      border-radius: 5px;
+      padding: 10px 10px 8px;
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,235,100,0.38),
+        inset 0 -1px 0 rgba(0,0,0,0.28),
+        0 4px 14px rgba(0,0,0,0.4);
+    }
+
+    /* Reel row inside the brass plate */
+    .reels-frame {
+      display: flex;
+      gap: 7px;             /* brass visible between windows */
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      border-radius: 0;
+      overflow: visible;
+    }
+
+    /* ── Individual reel columns ── */
     .reel-col {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 0.7rem 0.4rem 0.8rem;
+      padding: 0;
+      min-width: 0;
     }
-    .reel-col + .reel-col {
-      border-left: 1px solid var(--b1);
-      box-shadow: inset 1px 0 0 rgba(255,255,255,0.025);
-    }
+    .reel-col + .reel-col { border-left: none; }
 
+    /* Label sits on the brass surface above window */
     .reel-label {
-      font-size: 0.56rem;
-      letter-spacing: 0.22em;
-      color: var(--b2);
+      font-size: 0.5rem;
+      letter-spacing: 0.2em;
       text-transform: uppercase;
-      margin-bottom: 0.5rem;
+      color: rgba(12,6,0,0.6);
+      text-shadow: 0 1px 0 rgba(255,220,80,0.22);
+      padding-bottom: 5px;
       white-space: nowrap;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.95);
+      text-align: center;
+      width: 100%;
     }
 
+    /* ── Reel window — cream card stock cutout ── */
     .reel-window {
       width: 100%;
       height: 240px;
+      background: var(--win-bg);
       overflow: hidden;
       position: relative;
       border-radius: 3px;
-      box-shadow: inset 0 2px 10px rgba(0,0,0,0.85);
+      box-shadow:
+        inset 0 4px 18px rgba(0,0,0,0.55),
+        inset 0 1px 4px rgba(0,0,0,0.35),
+        0 1px 0 rgba(255,225,80,0.14);
     }
+
+    /* Fade to cream at top & bottom */
     .reel-window::before {
       content: '';
       position: absolute;
       inset: 0;
       background: linear-gradient(
         180deg,
-        rgba(0,0,0,0.94) 0%,
-        rgba(0,0,0,0.35) 20%,
-        transparent 38%,
-        transparent 62%,
-        rgba(0,0,0,0.35) 80%,
-        rgba(0,0,0,0.94) 100%
+        var(--win-fade)   0%,
+        rgba(237,232,216,.72) 15%,
+        rgba(237,232,216,0)   34%,
+        rgba(237,232,216,0)   66%,
+        rgba(237,232,216,.72) 85%,
+        var(--win-fade)  100%
       );
       z-index: 2;
       pointer-events: none;
     }
-    /* Center selection — engraved brass lines */
+
+    /* Centre selection — pair of brass hair-lines */
     .reel-window::after {
       content: '';
       position: absolute;
-      left: 6px; right: 6px;
+      left: 5px; right: 5px;
       top: calc(50% - 24px);
       height: 48px;
-      border-top: 1px solid rgba(160,120,24,0.45);
-      border-bottom: 1px solid rgba(160,120,24,0.45);
+      border-top: 1px solid rgba(100,70,0,.3);
+      border-bottom: 1px solid rgba(100,70,0,.3);
       z-index: 3;
       pointer-events: none;
-      transition: border-color 0.4s, box-shadow 0.4s;
+      transition: border-color .4s, box-shadow .4s;
     }
 
     .reel-strip {
@@ -187,146 +218,176 @@
       top: 0; left: 0; right: 0;
     }
 
+    /* Reel text — dark ink on cream */
     .reel-item {
       height: var(--item-h);
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 600;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       text-align: center;
       padding: 0 6px;
       text-transform: uppercase;
       letter-spacing: 0.04em;
-      color: rgba(160,120,24,0.18);
+      color: rgba(20,12,0,.13);
       line-height: 1.2;
-      transition: color 0.1s;
+      transition: color .1s;
     }
-    .reel-item.adj  { color: rgba(160,120,24,0.45); }
+    .reel-item.adj   { color: rgba(20,12,0,.45); }
     .reel-item.center {
-      color: var(--b6);
-      font-size: 0.88rem;
+      color: var(--win-text);
+      font-size: 0.84rem;
       font-weight: 700;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.9), 0 0 14px rgba(160,120,24,0.28);
     }
 
-    .reel-col.spinning .reel-window { filter: blur(0.8px); }
+    .reel-col.spinning .reel-window   { filter: blur(0.6px); }
     .reel-col.spinning .reel-window::after { display: none; }
-    .reel-col.spinning .reel-item { transition: none; }
+    .reel-col.spinning .reel-item     { transition: none; }
 
     .reel-col.locked .reel-window::after {
-      border-color: var(--b6);
+      border-color: rgba(150,110,10,.65);
       box-shadow:
-        0 0 14px rgba(232,188,56,0.35),
-        inset 0 0 14px rgba(232,188,56,0.06);
-      animation: win-glow 0.9s ease-in-out 3;
+        0 0 10px rgba(160,120,16,.22),
+        inset 0 0 10px rgba(160,120,16,.06);
+      animation: win-glow .85s ease-in-out 3;
     }
     .reel-col.locked .reel-item.center {
-      color: var(--b7);
-      text-shadow: 0 0 18px rgba(244,208,96,0.55), 0 1px 3px rgba(0,0,0,0.9);
+      color: #2a1800;
     }
     @keyframes win-glow {
-      0%, 100% { box-shadow: 0 0 6px rgba(232,188,56,0.18); }
-      50%       { box-shadow: 0 0 24px rgba(232,188,56,0.5); }
+      0%,100% { box-shadow: 0 0 4px rgba(150,110,10,.12); }
+      50%      { box-shadow: 0 0 18px rgba(150,110,10,.38); }
     }
 
-    /* ── Spin Button ── */
-    .spin-btn {
-      display: block;
-      width: 100%;
-      margin-top: 1.2rem;
-      padding: 0.9rem 2rem;
+    /* ── Badge panel (right of reels, on brass plate) ── */
+    .plate-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 0 8px 0 10px;
+      border-left: 1px solid rgba(0,0,0,.22);
+      width: 56px;
+      flex-shrink: 0;
+      height: 240px;  /* match reel-window height */
+      align-self: flex-end;
+    }
+    .plate-badge svg {
+      width: 26px; height: 26px;
+      stroke: rgba(12,6,0,.5);
+      fill: none;
+      stroke-width: 1.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .plate-badge-text {
       font-family: 'Oswald', sans-serif;
-      font-size: 0.95rem;
-      font-weight: 700;
-      letter-spacing: 0.38em;
+      font-size: 0.38rem;
+      letter-spacing: 0.22em;
       text-transform: uppercase;
-      color: var(--b6);
-      text-shadow:
-        0 2px 3px rgba(0,0,0,0.95),
-        0 -1px 0 rgba(244,208,96,0.12);
-      cursor: pointer;
-      border: none;
-      border-radius: 6px;
-      background:
-        repeating-linear-gradient(
-          170deg,
-          transparent 0px, transparent 2px,
-          rgba(255,255,255,0.008) 2px, rgba(255,255,255,0.008) 3px
-        ),
-        linear-gradient(180deg, #424242 0%, #303030 35%, #252525 70%, #1c1c1c 100%);
-      box-shadow:
-        0 0 0 1px var(--s1),
-        0 0 0 3px var(--b4),
-        0 0 0 4px var(--b1),
-        0 0 0 6px var(--s1),
-        inset 0 1px 0 rgba(255,255,255,0.09),
-        inset 0 -1px 0 rgba(0,0,0,0.65),
-        0 5px 18px rgba(0,0,0,0.75);
-      transition: box-shadow 0.12s, transform 0.08s, color 0.12s;
-      position: relative;
-    }
-    .spin-btn:hover:not(:disabled) {
-      color: var(--b7);
-      box-shadow:
-        0 0 0 1px var(--s1),
-        0 0 0 3px var(--b5),
-        0 0 0 4px var(--b2),
-        0 0 0 6px var(--s1),
-        inset 0 1px 0 rgba(255,255,255,0.11),
-        inset 0 -1px 0 rgba(0,0,0,0.65),
-        0 7px 24px rgba(0,0,0,0.75),
-        0 0 40px rgba(160,120,24,0.07);
-    }
-    .spin-btn:active:not(:disabled) {
-      transform: translateY(2px);
-      box-shadow:
-        0 0 0 1px var(--s1),
-        0 0 0 3px var(--b3),
-        0 0 0 4px var(--b1),
-        0 0 0 6px var(--s1),
-        inset 0 3px 8px rgba(0,0,0,0.7),
-        inset 0 1px 0 rgba(0,0,0,0.5),
-        0 2px 8px rgba(0,0,0,0.7);
-    }
-    .spin-btn:disabled {
-      cursor: not-allowed;
-      color: var(--b2);
-      opacity: 0.5;
+      color: rgba(12,6,0,.5);
+      text-align: center;
+      line-height: 1.6;
     }
 
-    /* ── Machine Footer ── */
+    /* ── Plate footer (brand strip inside brass plate) ── */
+    .plate-footer {
+      padding: 5px 2px 0;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .plate-est {
+      font-size: 0.42rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(12,6,0,.38);
+      font-style: italic;
+      font-family: 'Playfair Display', serif;
+    }
+
+    /* ── Machine footer (on aluminum surface, below plate) ── */
     .machine-footer {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0.55rem 0.3rem 0;
+      padding: 0.65rem 0.4rem 0;
     }
     .brand {
-      font-size: 0.52rem;
-      letter-spacing: 0.3em;
-      color: var(--b2);
-      text-shadow: 0 1px 2px rgba(0,0,0,0.95);
+      font-size: 0.5rem;
+      letter-spacing: 0.28em;
       text-transform: uppercase;
+      color: rgba(20,12,0,.38);
+      text-shadow: 0 1px 0 rgba(255,255,255,.45);
     }
-    /* Decorative center mark */
-    .brand-mark {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .brand-mark::before,
-    .brand-mark::after {
-      content: '';
+
+    /* ══════════════════════════════════════
+       SPIN BUTTON
+       Aluminum body, brass inlay border ring.
+    ══════════════════════════════════════ */
+    .spin-btn {
       display: block;
-      width: 20px;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--b2), transparent);
+      margin-top: 1.4rem;
+      padding: 0.8rem 4.5rem;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.42em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      color: rgba(20,12,0,.72);
+      text-shadow:
+        0 1px 0 rgba(255,255,255,.42),
+        0 -1px 0 rgba(0,0,0,.14);
+      background:
+        repeating-linear-gradient(
+          172deg,
+          transparent 0px, transparent 2px,
+          rgba(255,255,255,.018) 2px, rgba(255,255,255,.018) 3px
+        ),
+        linear-gradient(180deg, #d6d6d6 0%, #b4b4b4 38%, #9c9c9c 100%);
+      box-shadow:
+        0 0 0 1px #444,
+        0 0 0 3px var(--br-base),
+        0 0 0 5px var(--br-shadow),
+        0 0 0 6px #333,
+        inset 0 1px 0 rgba(255,255,255,.5),
+        inset 0 -1px 0 rgba(0,0,0,.14),
+        0 5px 18px rgba(0,0,0,.55);
+      transition: transform .08s, box-shadow .1s, color .1s;
+    }
+    .spin-btn:hover:not(:disabled) {
+      color: rgba(20,12,0,.88);
+      background:
+        repeating-linear-gradient(
+          172deg,
+          transparent 0px, transparent 2px,
+          rgba(255,255,255,.018) 2px, rgba(255,255,255,.018) 3px
+        ),
+        linear-gradient(180deg, #dcdcdc 0%, #bcbcbc 38%, #a4a4a4 100%);
+    }
+    .spin-btn:active:not(:disabled) {
+      transform: translateY(2px);
+      box-shadow:
+        0 0 0 1px #444,
+        0 0 0 3px var(--br-mid),
+        0 0 0 5px var(--br-shadow),
+        0 0 0 6px #333,
+        inset 0 3px 8px rgba(0,0,0,.3),
+        inset 0 1px 0 rgba(0,0,0,.12),
+        0 2px 8px rgba(0,0,0,.55);
+    }
+    .spin-btn:disabled {
+      opacity: .45;
+      cursor: not-allowed;
     }
 
     /* ── Result Section ── */
     .result-section {
-      margin-top: 2.5rem;
+      margin-top: 2.4rem;
       text-align: center;
       max-width: 640px;
       width: 100%;
@@ -336,128 +397,122 @@
       font-family: 'Playfair Display', serif;
       font-size: clamp(1rem, 2.8vw, 1.4rem);
       line-height: 1.8;
-      color: var(--text);
+      color: var(--text-page);
       min-height: 3.5em;
-      transition: opacity 0.4s;
+      transition: opacity .4s;
     }
-    .prompt-text.dim { opacity: 0.28; }
+    .prompt-text.dim { opacity: .28; }
     .prompt-text .hi {
-      color: var(--b6);
+      color: var(--br-hi);
       font-style: italic;
-      text-shadow: 0 0 22px rgba(160,120,24,0.2);
     }
 
     .gen-row {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.7rem;
-      margin-top: 1.6rem;
+      gap: .7rem;
+      margin-top: 1.5rem;
     }
-
     .generate-btn {
-      padding: 0.65rem 2.2rem;
+      padding: .62rem 2rem;
       font-family: 'Oswald', sans-serif;
-      font-size: 0.78rem;
+      font-size: .78rem;
       font-weight: 700;
-      letter-spacing: 0.2em;
+      letter-spacing: .2em;
       text-transform: uppercase;
-      color: var(--b5);
-      text-shadow: 0 1px 2px rgba(0,0,0,0.9);
       cursor: pointer;
       border: none;
       border-radius: 5px;
-      background: linear-gradient(180deg, #3c3c3c 0%, #282828 55%, #1e1e1e 100%);
+      color: rgba(20,12,0,.7);
+      text-shadow: 0 1px 0 rgba(255,255,255,.4);
+      background: linear-gradient(180deg, #cccccc 0%, #aaaaaa 50%, #949494 100%);
       box-shadow:
-        0 0 0 1px var(--s1),
-        0 0 0 2px var(--b3),
-        0 0 0 3px var(--b1),
-        inset 0 1px 0 rgba(255,255,255,0.08),
-        0 3px 12px rgba(0,0,0,0.65);
-      transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s, color 0.15s;
+        0 0 0 1px #444,
+        0 0 0 2px var(--br-mid),
+        0 0 0 3px var(--br-shadow),
+        inset 0 1px 0 rgba(255,255,255,.45),
+        0 3px 10px rgba(0,0,0,.55);
+      transition: opacity .2s, transform .1s, box-shadow .2s;
       display: none;
     }
     .generate-btn.visible { display: inline-block; }
     .generate-btn:hover {
-      color: var(--b7);
       transform: translateY(-1px);
       box-shadow:
-        0 0 0 1px var(--s1),
-        0 0 0 2px var(--b4),
-        0 0 0 3px var(--b1),
-        inset 0 1px 0 rgba(255,255,255,0.10),
-        0 5px 16px rgba(0,0,0,0.65);
+        0 0 0 1px #444,
+        0 0 0 2px var(--br-base),
+        0 0 0 3px var(--br-shadow),
+        inset 0 1px 0 rgba(255,255,255,.48),
+        0 5px 14px rgba(0,0,0,.55);
     }
-    .generate-btn:active { transform: translateY(0); }
-    .generate-btn:disabled { opacity: 0.38; cursor: not-allowed; transform: none; }
+    .generate-btn:active  { transform: translateY(0); }
+    .generate-btn:disabled { opacity: .38; cursor: not-allowed; transform: none; }
 
-    /* Settings toggle */
     .settings-toggle {
       width: 34px; height: 34px;
       background: transparent;
-      border: 1px solid var(--b2);
+      border: 1px solid var(--br-dark);
       border-radius: 50%;
-      color: var(--b2);
+      color: var(--br-dark);
       font-size: 1rem;
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      transition: border-color 0.2s, color 0.2s;
+      transition: border-color .2s, color .2s;
       flex-shrink: 0;
     }
-    .settings-toggle:hover { border-color: var(--b5); color: var(--b5); }
-    .settings-toggle.active { border-color: var(--b5); color: var(--b5); }
+    .settings-toggle:hover  { border-color: var(--br-light); color: var(--br-light); }
+    .settings-toggle.active { border-color: var(--br-light); color: var(--br-light); }
 
     .settings-panel {
       display: none;
-      background:
-        linear-gradient(160deg, #1e1e1e 0%, #161616 100%);
-      border: 1px solid var(--b2);
+      background: linear-gradient(160deg, #1e1e1e 0%, #161616 100%);
+      border: 1px solid var(--br-dark);
       border-radius: 8px;
       padding: 1.2rem 1.4rem 1rem;
       margin-top: 1rem;
       text-align: left;
       width: 100%;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 8px 24px rgba(0,0,0,0.5);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 8px 24px rgba(0,0,0,.5);
     }
     .settings-panel.open { display: block; }
-    .settings-row { margin-bottom: 0.9rem; }
+    .settings-row { margin-bottom: .9rem; }
     .settings-row:last-child { margin-bottom: 0; }
     .settings-label {
       display: block;
-      font-size: 0.58rem;
-      letter-spacing: 0.22em;
+      font-size: .58rem;
+      letter-spacing: .22em;
       text-transform: uppercase;
-      color: var(--b3);
-      margin-bottom: 0.35rem;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+      color: var(--br-mid);
+      margin-bottom: .35rem;
     }
     .settings-select, .settings-input {
       width: 100%;
-      background: rgba(0,0,0,0.55);
-      border: 1px solid var(--b2);
+      background: rgba(0,0,0,.55);
+      border: 1px solid var(--br-dark);
       border-radius: 4px;
-      color: var(--text);
+      color: var(--text-page);
       font-family: 'Oswald', sans-serif;
-      font-size: 0.82rem;
-      padding: 0.45rem 0.7rem;
+      font-size: .82rem;
+      padding: .45rem .7rem;
     }
     .settings-select:focus, .settings-input:focus {
-      outline: none; border-color: var(--b5);
+      outline: none; border-color: var(--br-light);
     }
     .settings-hint {
       display: block;
-      font-size: 0.62rem;
-      color: var(--b3);
-      opacity: 0.8;
-      margin-top: 0.3rem;
+      font-size: .62rem;
+      color: var(--br-mid);
+      opacity: .8;
+      margin-top: .3rem;
       line-height: 1.5;
     }
-    .settings-hint a { color: var(--b5); text-decoration: none; }
+    .settings-hint a { color: var(--br-light); text-decoration: none; }
     .settings-hint a:hover { text-decoration: underline; }
 
     /* ── Image Section ── */
     .image-section {
-      margin-top: 2.5rem;
+      margin-top: 2.4rem;
       width: 100%;
       max-width: 660px;
       padding: 0 1rem;
@@ -468,12 +523,12 @@
       aspect-ratio: 16 / 9;
       background: #080808;
       border-radius: 10px;
-      border: 1px solid var(--s1);
+      border: 1px solid #333;
       overflow: hidden;
       box-shadow:
-        0 0 0 1px var(--b2),
-        inset 0 0 40px rgba(0,0,0,0.6),
-        0 20px 60px rgba(0,0,0,0.9);
+        0 0 0 1px var(--br-dark),
+        inset 0 0 40px rgba(0,0,0,.6),
+        0 20px 60px rgba(0,0,0,.9);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -489,30 +544,30 @@
       flex-direction: column;
       align-items: center;
       gap: 1rem;
-      color: var(--b2);
+      color: var(--br-dark);
       text-align: center;
       padding: 2rem;
     }
-    .image-placeholder svg { opacity: 0.18; }
+    .image-placeholder svg { opacity: .18; }
     .image-placeholder p {
-      font-size: 0.7rem;
-      letter-spacing: 0.14em;
+      font-size: .7rem;
+      letter-spacing: .14em;
       text-transform: uppercase;
-      opacity: 0.5;
+      opacity: .5;
     }
     .loading-sub {
-      font-size: 0.6rem;
-      letter-spacing: 0.1em;
+      font-size: .6rem;
+      letter-spacing: .1em;
       text-transform: uppercase;
-      opacity: 0.3;
-      margin-top: -0.5rem;
+      opacity: .3;
+      margin-top: -.5rem;
     }
     .fallback-prompt {
       font-family: 'Playfair Display', serif;
       font-style: italic;
-      font-size: 0.85rem;
-      color: var(--b6);
-      opacity: 0.9;
+      font-size: .85rem;
+      color: var(--br-hi);
+      opacity: .9;
       text-transform: none;
       letter-spacing: 0;
       max-width: 340px;
@@ -522,40 +577,41 @@
     .fallback-actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.6rem;
+      gap: .6rem;
       justify-content: center;
-      margin-top: 0.25rem;
+      margin-top: .25rem;
     }
     .open-link {
       display: inline-block;
-      padding: 0.45rem 1.1rem;
-      border: 1px solid var(--b2);
+      padding: .45rem 1.1rem;
+      border: 1px solid var(--br-dark);
       border-radius: 4px;
-      color: var(--b5);
-      font-size: 0.65rem;
-      letter-spacing: 0.12em;
+      color: var(--br-light);
+      font-size: .65rem;
+      letter-spacing: .12em;
       text-transform: uppercase;
       text-decoration: none;
-      transition: background 0.2s, color 0.2s;
+      transition: background .2s, color .2s;
       cursor: pointer;
       background: transparent;
       font-family: 'Oswald', sans-serif;
     }
-    .open-link:hover { background: var(--b1); color: var(--b7); }
+    .open-link:hover { background: var(--br-shadow); color: var(--br-hi); }
+
     .loading-ring {
-      width: 48px; height: 48px;
-      border: 2px solid rgba(160,120,24,0.12);
-      border-top-color: var(--b4);
+      width: 46px; height: 46px;
+      border: 2px solid rgba(160,120,20,.12);
+      border-top-color: var(--br-mid);
       border-radius: 50%;
-      animation: spin 0.9s linear infinite;
+      animation: spin .9s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .image-caption {
-      margin-top: 0.8rem;
-      font-size: 0.7rem;
-      letter-spacing: 0.07em;
-      color: rgba(160,120,24,0.45);
+      margin-top: .8rem;
+      font-size: .7rem;
+      letter-spacing: .07em;
+      color: rgba(200,160,32,.45);
       text-align: center;
       font-style: italic;
       font-family: 'Playfair Display', serif;
@@ -563,7 +619,7 @@
     }
     .image-caption.visible { display: block; }
 
-    /* ── Error toast ── */
+    /* ── Toast ── */
     .toast {
       position: fixed;
       bottom: 2rem; left: 50%;
@@ -571,24 +627,25 @@
       background: #1a0800;
       border: 1px solid #6b2800;
       color: #cc7755;
-      padding: 0.6rem 1.4rem;
+      padding: .6rem 1.4rem;
       border-radius: 6px;
-      font-size: 0.76rem;
-      letter-spacing: 0.05em;
-      transition: transform 0.3s ease;
+      font-size: .76rem;
+      letter-spacing: .05em;
+      transition: transform .3s ease;
       z-index: 999;
     }
     .toast.show { transform: translateX(-50%) translateY(0); }
 
     /* ── Responsive ── */
     @media (max-width: 640px) {
-      .machine { min-width: unset; width: 100%; padding: 1.2rem 0.9rem 1.1rem; }
+      .machine { padding: 1.5rem 1rem 1rem; }
       .reel-window { height: 192px; }
       .reel-window::after { top: calc(50% - 24px); height: 48px; }
-      .reel-label { font-size: 0.5rem; }
-      .reel-item { font-size: 0.65rem; }
-      .reel-item.center { font-size: 0.78rem; }
-      .spin-btn { font-size: 0.85rem; letter-spacing: 0.28em; }
+      .reel-label { font-size: .46rem; }
+      .reel-item  { font-size: .62rem; }
+      .reel-item.center { font-size: .75rem; }
+      .spin-btn   { padding: .75rem 3rem; letter-spacing: .3em; }
+      .plate-badge { width: 44px; }
     }
   </style>
 </head>
@@ -600,29 +657,56 @@
 </header>
 
 <div class="machine" id="machine">
-  <div class="reels-frame">
-    <div class="reel-col" id="reel-0">
-      <div class="reel-label">Visual Medium</div>
-      <div class="reel-window"><div class="reel-strip" id="strip-0"></div></div>
+
+  <!-- Brass display plate with reel windows -->
+  <div class="brass-plate">
+    <div class="reels-frame">
+
+      <div class="reel-col" id="reel-0">
+        <div class="reel-label">Visual Medium</div>
+        <div class="reel-window"><div class="reel-strip" id="strip-0"></div></div>
+      </div>
+
+      <div class="reel-col" id="reel-1">
+        <div class="reel-label">Inspired By</div>
+        <div class="reel-window"><div class="reel-strip" id="strip-1"></div></div>
+      </div>
+
+      <div class="reel-col" id="reel-2">
+        <div class="reel-label">In the Style of</div>
+        <div class="reel-window"><div class="reel-strip" id="strip-2"></div></div>
+      </div>
+
+      <!-- Badge panel — mirrors THE ORACLE's right-side badge -->
+      <div class="plate-badge">
+        <!-- Eye icon -->
+        <svg viewBox="0 0 24 24">
+          <ellipse cx="12" cy="12" rx="9" ry="5.5"/>
+          <circle cx="12" cy="12" r="2.4" fill="rgba(12,6,0,.45)" stroke="none"/>
+          <line x1="12" y1="4" x2="12" y2="6.4" stroke-width="1"/>
+          <line x1="12" y1="17.6" x2="12" y2="20" stroke-width="1"/>
+        </svg>
+        <div class="plate-badge-text">Art<br>Spinner</div>
+      </div>
+
     </div>
-    <div class="reel-col" id="reel-1">
-      <div class="reel-label">Inspired By</div>
-      <div class="reel-window"><div class="reel-strip" id="strip-1"></div></div>
-    </div>
-    <div class="reel-col" id="reel-2">
-      <div class="reel-label">In the Style of</div>
-      <div class="reel-window"><div class="reel-strip" id="strip-2"></div></div>
+
+    <div class="plate-footer">
+      <span class="plate-est">Est. 2025</span>
     </div>
   </div>
 
-  <button class="spin-btn" id="spin-btn">Spin</button>
-
+  <!-- Aluminum machine footer strip -->
   <div class="machine-footer">
     <span class="brand">Art Spinner&trade;</span>
-    <span class="brand brand-mark">—</span>
-    <span class="brand">Est.&nbsp;2025</span>
+    <span class="brand" style="opacity:.22">&#9670;</span>
+    <span class="brand">Generative&nbsp;Art&nbsp;Engine</span>
   </div>
+
 </div>
+
+<!-- Spin button (separate from machine body, like a side crank translated to a button) -->
+<button class="spin-btn" id="spin-btn">Spin</button>
 
 <div class="result-section">
   <div class="prompt-text dim" id="prompt-text">
@@ -700,7 +784,7 @@ const DATA = [
 ];
 
 const SPIN_DURATIONS = [2000, 2700, 3500];
-const ITEM_H = 48;
+const ITEM_H  = 48;
 const VISIBLE = 5;
 const CENTER  = 2;
 
@@ -752,7 +836,7 @@ class Reel {
     this.col.classList.remove('locked');
     this.col.classList.add('spinning');
 
-    const end = Date.now() + duration;
+    const end  = Date.now() + duration;
     const fast = () => {
       this.idx = (this.idx + 1) % this.N;
       this._render();
@@ -834,8 +918,7 @@ function startSpin() {
   document.getElementById('img-section').style.display = 'none';
   document.getElementById('img-caption').classList.remove('visible');
 
-  const btn = document.getElementById('spin-btn');
-  btn.disabled = true;
+  document.getElementById('spin-btn').disabled = true;
 
   const targets = DATA.map(d => Math.floor(Math.random() * d.length));
   let stopped = 0;
@@ -862,8 +945,7 @@ function onAllStopped() {
 
   document.getElementById('gen-btn').classList.add('visible');
 
-  const imgSection = document.getElementById('img-section');
-  imgSection.style.display = 'block';
+  document.getElementById('img-section').style.display = 'block';
   document.getElementById('img-frame').innerHTML = `
     <div class="image-placeholder">
       <svg width="64" height="64" viewBox="0 0 24 24" fill="none"
@@ -910,8 +992,8 @@ function initSettings() {
 }
 
 function applyService(svc) {
-  document.getElementById('key-row').style.display   = svc === 'stablehorde' ? 'none' : '';
-  document.getElementById('service-hint').innerHTML  = SERVICE_HINTS[svc] || '';
+  document.getElementById('key-row').style.display  = svc === 'stablehorde' ? 'none' : '';
+  document.getElementById('service-hint').innerHTML = SERVICE_HINTS[svc] || '';
 }
 
 /* ──────────────────────────────────────────
