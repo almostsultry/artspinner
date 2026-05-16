@@ -59,6 +59,23 @@
         0 -1px 0 rgba(240,200,64,0.12),
         0 0 50px rgba(160,120,20,0.18);
       letter-spacing: 0.08em;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: text-shadow 0.18s, opacity 0.18s;
+    }
+    header h1:hover {
+      text-shadow:
+        0 2px 4px rgba(0,0,0,0.95),
+        0 -1px 0 rgba(240,200,64,0.2),
+        0 0 70px rgba(200,160,30,0.38);
+    }
+    header h1:active {
+      opacity: 0.75;
+    }
+    header h1.spin-disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
     }
     header p {
       font-size: 0.68rem;
@@ -322,68 +339,6 @@
       text-shadow: 0 1px 0 rgba(255,255,255,.45);
     }
 
-    /* ══════════════════════════════════════
-       SPIN BUTTON
-       Aluminum body, brass inlay border ring.
-    ══════════════════════════════════════ */
-    .spin-btn {
-      display: block;
-      margin-top: 1.4rem;
-      padding: 0.8rem 4.5rem;
-      font-family: 'Oswald', sans-serif;
-      font-size: 0.9rem;
-      font-weight: 700;
-      letter-spacing: 0.42em;
-      text-transform: uppercase;
-      cursor: pointer;
-      border: none;
-      border-radius: 6px;
-      color: rgba(20,12,0,.72);
-      text-shadow:
-        0 1px 0 rgba(255,255,255,.42),
-        0 -1px 0 rgba(0,0,0,.14);
-      background:
-        repeating-linear-gradient(
-          172deg,
-          transparent 0px, transparent 2px,
-          rgba(255,255,255,.018) 2px, rgba(255,255,255,.018) 3px
-        ),
-        linear-gradient(180deg, #d6d6d6 0%, #b4b4b4 38%, #9c9c9c 100%);
-      box-shadow:
-        0 0 0 1px #444,
-        0 0 0 3px var(--br-base),
-        0 0 0 5px var(--br-shadow),
-        0 0 0 6px #333,
-        inset 0 1px 0 rgba(255,255,255,.5),
-        inset 0 -1px 0 rgba(0,0,0,.14),
-        0 5px 18px rgba(0,0,0,.55);
-      transition: transform .08s, box-shadow .1s, color .1s;
-    }
-    .spin-btn:hover:not(:disabled) {
-      color: rgba(20,12,0,.88);
-      background:
-        repeating-linear-gradient(
-          172deg,
-          transparent 0px, transparent 2px,
-          rgba(255,255,255,.018) 2px, rgba(255,255,255,.018) 3px
-        ),
-        linear-gradient(180deg, #dcdcdc 0%, #bcbcbc 38%, #a4a4a4 100%);
-    }
-    .spin-btn:active:not(:disabled) {
-      transform: translateY(2px);
-      box-shadow:
-        0 0 0 1px #444,
-        0 0 0 3px var(--br-mid),
-        0 0 0 5px var(--br-shadow),
-        0 0 0 6px #333,
-        inset 0 3px 8px rgba(0,0,0,.3),
-        inset 0 1px 0 rgba(0,0,0,.12),
-        0 2px 8px rgba(0,0,0,.55);
-    }
-    .spin-btn:disabled {
-      opacity: .45;
-      cursor: not-allowed;
-    }
 
     /* ── Result Section ── */
     .result-section {
@@ -652,8 +607,8 @@
 <body>
 
 <header>
-  <h1>Art Spinner</h1>
-  <p>Let fate choose your masterpiece</p>
+  <h1 id="spin-btn" role="button" tabindex="0" aria-label="Spin">Art Spinner</h1>
+  <p>Click to spin &mdash; let fate choose your masterpiece</p>
 </header>
 
 <div class="machine" id="machine">
@@ -704,9 +659,6 @@
   </div>
 
 </div>
-
-<!-- Spin button (separate from machine body, like a side crank translated to a button) -->
-<button class="spin-btn" id="spin-btn">Spin</button>
 
 <div class="result-section">
   <div class="prompt-text dim" id="prompt-text">
@@ -896,7 +848,11 @@ let currentPrompt = '';
 
 function init() {
   reels = DATA.map((items, i) => new Reel(`reel-${i}`, items));
-  document.getElementById('spin-btn').addEventListener('click', handleSpin);
+  const logo = document.getElementById('spin-btn');
+  logo.addEventListener('click', handleSpin);
+  logo.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSpin(); }
+  });
   document.getElementById('gen-btn').addEventListener('click', generateImage);
   initSettings();
 }
@@ -918,7 +874,7 @@ function startSpin() {
   document.getElementById('img-section').style.display = 'none';
   document.getElementById('img-caption').classList.remove('visible');
 
-  document.getElementById('spin-btn').disabled = true;
+  document.getElementById('spin-btn').classList.add('spin-disabled');
 
   const targets = DATA.map(d => Math.floor(Math.random() * d.length));
   let stopped = 0;
@@ -933,7 +889,7 @@ function startSpin() {
 
 function onAllStopped() {
   isSpinning = false;
-  document.getElementById('spin-btn').disabled = false;
+  document.getElementById('spin-btn').classList.remove('spin-disabled');
 
   const [media, influence, style] = results;
   const promptEl = document.getElementById('prompt-text');
