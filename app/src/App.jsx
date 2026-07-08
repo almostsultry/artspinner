@@ -1,8 +1,9 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api } from './api.js'
-import { isFullyScored } from './scoring.js'
+import { isExecScored, hasFacts } from './scoring.js'
 import Header from './components/Header.jsx'
 import PrioritizeView from './components/PrioritizeView.jsx'
+import AdminView from './components/AdminView.jsx'
 import Sidecar from './components/Sidecar.jsx'
 import CopilotPanel from './components/CopilotPanel.jsx'
 import SubmitBar from './components/SubmitBar.jsx'
@@ -13,6 +14,7 @@ export default function App() {
   const [boot, setBoot] = useState(null)
   const [view, setView] = useState('prioritize')
   const [scores, setScores] = useState({})
+  const [facts, setFacts] = useState({})
   const [ranks, setRanks] = useState([])
   const [submission, setSubmission] = useState(null)
   const [round, setRound] = useState(null)
@@ -25,6 +27,7 @@ export default function App() {
     api.bootstrap().then((b) => {
       setBoot(b)
       setScores(b.myScores || {})
+      setFacts(b.facts || {})
       setRanks(b.myRanks || [])
       setSubmission(b.submission)
       setRound(b.round)
@@ -68,6 +71,12 @@ export default function App() {
     api.saveRanks(order)
   }, [])
 
+  // Admin-only: facilitator sets shared Feasibility/Readiness (+ rationale).
+  const saveFacts = useCallback((storyId, patch) => {
+    setFacts((prev) => ({ ...prev, [storyId]: { ...prev[storyId], ...patch } }))
+    api.saveFacts(storyId, patch)
+  }, [])
+
   const submit = async () => {
     const r = await api.submit()
     setSubmission(r.submission)
@@ -86,25 +95,29 @@ export default function App() {
   if (!boot) return <div className="loading">Loading…</div>
 
   const plannable = stories.filter((s) => !lockedIds.has(s.id))
-  const scoredCount = plannable.filter((s) => isFullyScored(scores[s.id])).length
+  const scoredCount = plannable.filter((s) => isExecScored(scores[s.id])).length
+  const awaitingAnalysis = plannable.filter((s) => !hasFacts(facts[s.id])).length
 
   return (
     <>
       <Header
         view={view} onView={setView}
-        user={boot.user} round={round}
+        user={boot.user} round={round} isAdmin={boot.user.isAdmin}
         onRoundAction={boot.user.isAdmin ? roundAction : null}
         onCopilot={() => { setSidecarStory(null); setCopilotOpen(true) }}
       />
       <main className="main">
         {view === 'prioritize' && (
           <PrioritizeView
-            epics={boot.epics} stories={stories} scores={scores} weights={boot.weights}
+            epics={boot.epics} stories={stories} scores={scores} facts={facts} weights={boot.weights}
             ranks={ranks} onReorder={setOrder} onScore={setScore} onComment={setSidecarStory}
             disabled={!roundOpen} lockedIds={lockedIds}
             currentSprint={round?.currentSprint}
             onToggleLock={boot.user.isAdmin ? toggleLock : null}
           />
+        )}
+        {view === 'admin' && boot.user.isAdmin && (
+          <AdminView stories={stories} facts={facts} onSaveFacts={saveFacts} />
         )}
         {view === 'dashboard' && (
           <Suspense fallback={<div className="loading">Loading dashboard…</div>}>
@@ -115,10 +128,17 @@ export default function App() {
       {view === 'prioritize' && (
         <SubmitBar
           scoredCount={scoredCount} total={plannable.length} prioritizedCount={ranks.length}
+          awaitingAnalysis={awaitingAnalysis}
           submission={submission} roundOpen={roundOpen} onSubmit={submit}
         />
       )}
-      {sidecarStory && <Sidecar story={sidecarStory} onClose={() => setSidecarStory(null)} />}
+      {sidecarStory && (
+        <Sidecar
+          story={sidecarStory} score={scores[sidecarStory.id]} onScore={setScore}
+          disabled={!roundOpen} userName={boot.user.name}
+          onClose={() => setSidecarStory(null)}
+        />
+      )}
       {copilotOpen && <CopilotPanel onClose={() => setCopilotOpen(false)} />}
     </>
   )

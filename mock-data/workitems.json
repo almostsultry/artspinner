@@ -258,5 +258,121 @@
     "213": 1,
     "214": 5,
     "215": 10
-  }
+  },
+  "storyFacts": {
+    "201": {
+      "feasibility": 4,
+      "readiness": 4,
+      "feasibilityNote": "GL export API exists; nightly batch only — no real-time need",
+      "readinessNote": "Finance sponsor engaged; close process well documented"
+    },
+    "202": {
+      "feasibility": 3,
+      "readiness": 4,
+      "feasibilityNote": "Mapping data clean; UI build is the bulk of the effort",
+      "readinessNote": "Controller team ready; depends on 201 sequencing only"
+    },
+    "203": {
+      "feasibility": 1,
+      "readiness": 2,
+      "feasibilityNote": "Three systems of record, no shared key; survivorship rules undefined",
+      "readinessNote": "No agreed data owner between Sales and Billing yet"
+    },
+    "205": {
+      "feasibility": 4,
+      "readiness": 3,
+      "feasibilityNote": "Lead data already lands in CRM; scoring rules are config",
+      "readinessNote": "Territory model final, but SLA ownership unassigned"
+    },
+    "206": {
+      "feasibility": 4,
+      "readiness": 5,
+      "feasibilityNote": "Native CRM approval framework covers this",
+      "readinessNote": "Sales VP sponsored; discount matrix already approved"
+    },
+    "207": {
+      "feasibility": 2,
+      "readiness": 4,
+      "feasibilityNote": "Offline sync + photo storage is the hard part",
+      "readinessNote": "Service managers piloted paper version; strong pull"
+    },
+    "208": {
+      "feasibility": 3,
+      "readiness": 3,
+      "feasibilityNote": "Schedule data available; travel-time calc needs a maps service",
+      "readinessNote": "Dispatch process varies by branch — needs standardization first"
+    },
+    "209": {
+      "feasibility": 2,
+      "readiness": 3,
+      "feasibilityNote": "24mo history exists but branch data quality is uneven",
+      "readinessNote": "Parts managers interested; forecasting ownership unclear"
+    },
+    "210": {
+      "feasibility": 4,
+      "readiness": 4,
+      "feasibilityNote": "Carrier APIs available; small integration",
+      "readinessNote": "Expedite desk already tracks manually — clear process"
+    },
+    "211": {
+      "feasibility": 4,
+      "readiness": 4,
+      "feasibilityNote": "Telematics feed already ingested for billing",
+      "readinessNote": "Rental GM sponsors; KPI definitions agreed"
+    },
+    "213": {
+      "feasibility": 2,
+      "readiness": 3,
+      "feasibilityNote": "Greenfield platform build; access model is the long pole",
+      "readinessNote": "CIO sponsored; governance council not yet formed"
+    },
+    "214": {
+      "feasibility": 3,
+      "readiness": 2,
+      "feasibilityNote": "LLM service procurement done; PII handling needs review",
+      "readinessNote": "Pilot branch identified; service writers not yet briefed"
+    },
+    "215": {
+      "feasibility": 3,
+      "readiness": 4,
+      "feasibilityNote": "OEM tool has an embed API; quote schema mapping needed",
+      "readinessNote": "PS quoting team requested this; process stable"
+    },
+    "216": {
+      "feasibility": 4,
+      "readiness": 4,
+      "feasibilityNote": "Renewal data complete in DMS; pricing index exists",
+      "readinessNote": "Agreements manager owns process end to end"
+    }
+  },
+  "rationales": [
+    {
+      "workItemId": 209,
+      "author": "Dana Whitfield",
+      "dimension": "businessValue",
+      "value": 5,
+      "note": "Parts margin upside ~$2MM/yr at 2% stockout reduction"
+    },
+    {
+      "workItemId": 201,
+      "author": "Dana Whitfield",
+      "dimension": "businessValue",
+      "value": 4,
+      "note": "Frees ~50% of 4 finance headcount each close week"
+    },
+    {
+      "workItemId": 213,
+      "author": "Marcus Lee",
+      "dimension": "strategicFit",
+      "value": 5,
+      "note": "Prerequisite for every AI initiative on the roadmap"
+    },
+    {
+      "workItemId": 216,
+      "author": "Marcus Lee",
+      "dimension": "businessValue",
+      "value": 3,
+      "note": "Saves ~5 hours/month manual renewal quoting per branch"
+    }
+  ]
 }

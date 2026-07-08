@@ -34,5 +34,7 @@ export const api = {
   roundAction: (action) => request('/round', { method: 'POST', body: { action } }),
   setLock: (workItemId, unlocked) => request(`/locks/${workItemId}`, { method: 'PUT', body: { unlocked } }),
   askAssistant: (question) => request('/assistant', { method: 'POST', body: { question } }),
+  saveFacts: (workItemId, values) => request(`/facts/${workItemId}`, { method: 'PUT', body: values }),
+  rationales: (workItemId) => request(`/rationales/${workItemId}`),
   isMock: () => mockMode,
 }

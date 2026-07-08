@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
+import { EXEC_DIMENSIONS } from '../scoring.js'
 
 function fmtWhen(iso) {
   return new Date(iso).toLocaleString(undefined, {
@@ -7,14 +8,18 @@ function fmtWhen(iso) {
   })
 }
 
-export default function Sidecar({ story, onClose }) {
+const DIM_SHORT = { businessValue: 'BV', strategicFit: 'SF', feasibility: 'FE', readiness: 'RD' }
+
+export default function Sidecar({ story, score, onScore, disabled, userName, onClose }) {
   const [comments, setComments] = useState(null)
+  const [rationales, setRationales] = useState([])
   const [draft, setDraft] = useState('')
   const [posting, setPosting] = useState(false)
 
   useEffect(() => {
     setComments(null)
     api.comments(story.id).then(setComments)
+    api.rationales(story.id).then(setRationales)
   }, [story.id])
 
   useEffect(() => {
@@ -36,6 +41,9 @@ export default function Sidecar({ story, onClose }) {
     }
   }
 
+  // Rationales from others (own notes are edited in the form above the list).
+  const peerRationales = rationales.filter((r) => r.author !== userName)
+
   return (
     <>
       <div className="overlay" onClick={onClose} />
@@ -50,6 +58,43 @@ export default function Sidecar({ story, onClose }) {
           </div>
         </div>
         <div className="comments">
+          <div className="rationale-block">
+            <div className="rationale-head">Your score rationale</div>
+            <div className="rationale-hint">
+              Quantify your scores where you can — “$2MM/yr margin”, “50% of 4 headcount weekly”,
+              “5 hours/month”. Shown to the other executives with your score.
+            </div>
+            {EXEC_DIMENSIONS.map((d) => (
+              <div className="rationale-row" key={d.key}>
+                <span className="rationale-dim" title={d.label}>
+                  {d.short}{score?.[d.key] ? ` ${score[d.key]}` : ' —'}
+                </span>
+                <input
+                  className="note-input" style={{ width: '100%' }}
+                  placeholder={`Why this ${d.label} score…`}
+                  disabled={disabled}
+                  value={score?.[d.noteKey] || ''}
+                  onChange={(e) => onScore(story.id, d.noteKey, e.target.value)}
+                />
+              </div>
+            ))}
+          </div>
+
+          {peerRationales.length > 0 && (
+            <div className="rationale-block">
+              <div className="rationale-head">Score rationales from the group</div>
+              {peerRationales.map((r, i) => (
+                <div className="comment" key={i}>
+                  <div className="comment-meta">
+                    <b>{r.author}</b> · {DIM_SHORT[r.dimension] || r.dimension}{r.value ? ` ${r.value}/5` : ''}
+                  </div>
+                  <div className="comment-body">{r.note}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="rationale-head" style={{ marginTop: 4 }}>Discussion</div>
           {comments === null && <span style={{ color: 'var(--muted)' }}>Loading discussion…</span>}
           {comments?.length === 0 && (
             <span style={{ color: 'var(--muted)' }}>No comments yet — start the discussion.</span>

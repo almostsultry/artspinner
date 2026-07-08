@@ -8,7 +8,7 @@ import Backlog from './Backlog.jsx'
 //  2. The unprioritized backlog — grouped by Epic. Stories move up via
 //     "Prioritize", back down via "Remove".
 export default function PrioritizeView({
-  epics, stories, scores, weights, ranks, onScore, onComment, disabled,
+  epics, stories, scores, facts, weights, ranks, onScore, onComment, disabled,
   lockedIds, currentSprint, onToggleLock, onReorder,
 }) {
   const byId = useMemo(() => new Map(stories.map((s) => [s.id, s])), [stories])
@@ -16,7 +16,7 @@ export default function PrioritizeView({
   const rankedSet = new Set(ranks)
   const backlog = stories.filter((s) => !rankedSet.has(s.id))
 
-  const shared = { scores, weights, onScore, onComment, disabled, lockedIds, currentSprint, onToggleLock }
+  const shared = { scores, facts, weights, onScore, onComment, disabled, lockedIds, currentSprint, onToggleLock }
 
   return (
     <>

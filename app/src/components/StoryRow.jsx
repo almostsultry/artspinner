@@ -1,12 +1,14 @@
-import { DIMENSIONS, priorityScore } from '../scoring.js'
-import { isFullyScored } from '../scoring.js'
+import {
+  EXEC_DIMENSIONS, SHARED_DIMENSIONS, priorityScore, isExecScored, hasFacts,
+} from '../scoring.js'
 import ScoreStepper from './ScoreStepper.jsx'
 
 export default function StoryRow({
-  story, score, weights, rank, onScore, onComment, disabled, gripProps,
+  story, score, facts, weights, rank, onScore, onComment, disabled, gripProps,
   locked, currentSprint, onToggleLock, showEpic, onAdd, onRemove,
 }) {
-  const total = priorityScore(score, weights)
+  const total = priorityScore(score, facts, weights)
+  const analyzed = hasFacts(facts)
   const inCurrentSprint = story.sprint && story.sprint === currentSprint
   return (
     <div className="story-row" style={locked ? { opacity: 0.72 } : undefined}>
@@ -34,20 +36,43 @@ export default function StoryRow({
         </div>
       </div>
       <div className="steppers">
-        {DIMENSIONS.map((d) => (
-          <ScoreStepper
-            key={d.key} dim={d} value={score?.[d.key]} disabled={disabled || locked}
-            onChange={(v) => onScore(story.id, d.key, v)}
-          />
+        {EXEC_DIMENSIONS.map((d) => (
+          <div key={d.key} className="stepper-wrap">
+            <ScoreStepper
+              dim={d} value={score?.[d.key]} disabled={disabled || locked}
+              onChange={(v) => onScore(story.id, d.key, v)}
+            />
+            {score?.[d.noteKey] && <span className="note-dot" title={`Your rationale: ${score[d.noteKey]}`}>📝</span>}
+          </div>
         ))}
+        <div className="shared-chips" title="Set by the facilitator after analysis — see the Admin tab">
+          {SHARED_DIMENSIONS.map((d) => (
+            <span
+              key={d.key}
+              className={`fact-chip ${facts?.[d.key] ? '' : 'pending'}`}
+              title={facts?.[d.key]
+                ? `${d.label} ${facts[d.key]}/5${facts[d.noteKey] ? ` — ${facts[d.noteKey]}` : ''}`
+                : `${d.label}: awaiting facilitator analysis`}
+            >
+              {d.short} {facts?.[d.key] ?? '—'}
+            </span>
+          ))}
+        </div>
       </div>
-      <span className={`score-badge ${total === null ? 'empty' : ''}`} title="Weighted priority score">
-        {total === null ? '—' : total.toFixed(2)}
+      <span
+        className={`score-badge ${total === null ? 'empty' : ''}`}
+        title={total !== null ? 'Weighted priority score'
+          : !analyzed ? 'Awaiting facilitator analysis (Feasibility/Readiness)'
+          : 'Score Business Value and Strategic Fit to compute'}
+      >
+        {total === null ? (analyzed ? '—' : '…') : total.toFixed(2)}
       </span>
       {onAdd && !locked && (
         <button
-          className="add-btn" disabled={disabled || !isFullyScored(score)}
-          title={isFullyScored(score) ? 'Add to your sprint prioritization' : 'Score all four dimensions first'}
+          className="add-btn" disabled={disabled || !isExecScored(score) || !analyzed}
+          title={!analyzed ? 'Awaiting facilitator analysis'
+            : isExecScored(score) ? 'Add to your sprint prioritization'
+            : 'Score Business Value and Strategic Fit first'}
           onClick={() => onAdd(story.id)}
         >
           ↑ Prioritize
@@ -56,7 +81,7 @@ export default function StoryRow({
       {onRemove && (
         <button className="comment-btn" title="Send back to the backlog" onClick={() => onRemove(story.id)}>✕</button>
       )}
-      <button className="comment-btn" onClick={() => onComment(story)}>💬 Discuss</button>
+      <button className="comment-btn" onClick={() => onComment(story)} title="Discussion & score rationale">💬 Discuss</button>
     </div>
   )
 }

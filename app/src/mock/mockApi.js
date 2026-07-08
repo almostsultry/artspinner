@@ -3,11 +3,15 @@
 // already submitted scoresheets so aggregation views have data.
 import seed from '../../../mock-data/workitems.json'
 import delivery from '../../../mock-data/delivery.json'
-import { DIMENSIONS, priorityScore } from '../scoring.js'
+import {
+  EXEC_DIMENSIONS, SHARED_DIMENSIONS, priorityScore,
+} from '../scoring.js'
 
-const KEY = `etc-prio:${seed.round.id}`
+const KEY = `etc-prio:${seed.round.id}:v2`
 const USER = { id: 'demo-user', name: 'Demo Executive', isAdmin: true }
-const WEIGHTS = Object.fromEntries(DIMENSIONS.map((d) => [d.key, d.defaultWeight]))
+const WEIGHTS = Object.fromEntries(
+  [...EXEC_DIMENSIONS, ...SHARED_DIMENSIONS].map((d) => [d.key, d.defaultWeight]),
+)
 const PEERS = ['Dana Whitfield', 'Marcus Lee']
 const NOT_SUBMITTED = ['Priya Nair', 'Tom Ovesen']
 
@@ -16,10 +20,22 @@ function load() {
     const raw = localStorage.getItem(KEY)
     if (raw) return JSON.parse(raw)
   } catch { /* fall through to fresh state */ }
-  return { scores: {}, ranks: [], submission: null, comments: {}, roundStatus: seed.round.status, unlocks: [], nextCommentId: 100 }
+  return {
+    scores: {}, ranks: [], submission: null, comments: {}, factEdits: {},
+    roundStatus: seed.round.status, unlocks: [], nextCommentId: 100,
+  }
 }
 function save(state) {
   localStorage.setItem(KEY, JSON.stringify(state))
+}
+
+// Facilitator-analyzed shared values: seed data overlaid with admin edits.
+function factsMap(state) {
+  const merged = {}
+  for (const s of seed.stories) {
+    merged[s.id] = { ...(seed.storyFacts?.[s.id] || {}), ...(state.factEdits[s.id] || {}) }
+  }
+  return merged
 }
 
 // Deterministic pseudo-random 1–5 so peer scoresheets are stable across loads.
@@ -31,7 +47,7 @@ function peerValue(peerIdx, storyId, dimIdx) {
 function peerScoresheet(peerIdx) {
   const sheet = {}
   for (const s of seed.stories) {
-    sheet[s.id] = Object.fromEntries(DIMENSIONS.map((d, i) => [d.key, peerValue(peerIdx, s.id, i)]))
+    sheet[s.id] = Object.fromEntries(EXEC_DIMENSIONS.map((d, i) => [d.key, peerValue(peerIdx, s.id, i)]))
   }
   return sheet
 }
@@ -40,13 +56,14 @@ const mean = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : nu
 const round2 = (v) => (v === null ? null : Math.round(v * 100) / 100)
 
 // Per-story stats across all submitted scoresheets: mean priority score,
-// score spread (divergence), and mean raw dimension values.
+// score spread (divergence), and mean/shared dimension values.
 function storyStats(state) {
+  const facts = factsMap(state)
   const sheets = PEERS.map((_, i) => peerScoresheet(i))
   if (state.submission) sheets.push(state.scores)
   return seed.stories.map((story) => {
     const entries = sheets.map((sheet) => sheet[story.id]).filter(Boolean)
-    const ps = entries.map((e) => priorityScore(e, WEIGHTS)).filter((v) => v !== null)
+    const ps = entries.map((e) => priorityScore(e, facts[story.id], WEIGHTS)).filter((v) => v !== null)
     return {
       ...story,
       score: round2(mean(ps)),
@@ -54,7 +71,7 @@ function storyStats(state) {
       max: ps.length ? Math.max(...ps) : null,
       spread: ps.length ? round2(Math.max(...ps) - Math.min(...ps)) : null,
       bv: round2(mean(entries.map((e) => e.businessValue).filter(Boolean))),
-      fe: round2(mean(entries.map((e) => e.feasibility).filter(Boolean))),
+      fe: facts[story.id]?.feasibility ?? null,
     }
   })
 }
@@ -81,6 +98,7 @@ function dashboard(state) {
     epics: seed.epics.filter((e) => e.businessLine === line).length,
     stories: seed.stories.filter((s) => s.businessLine === line).length,
   }))
+
   const divergence = [...stats]
     .filter((s) => s.spread !== null)
     .sort((a, b) => b.spread - a.spread)
@@ -104,6 +122,8 @@ function dashboard(state) {
     velocity: delivery.velocity,
     sprints: delivery.sprints,
     divergence, quadrant, movers,
+    awaitingAnalysis: seed.stories.length - Object.values(factsMap(state))
+      .filter((f) => f.feasibility >= 1 && f.readiness >= 1).length,
     participation: {
       submitted: PEERS.length + (state.submission ? 1 : 0),
       total: PEERS.length + NOT_SUBMITTED.length + 1,
@@ -123,7 +143,7 @@ function assistantAnswer(question, state) {
 
   if (/(disagree|diverg|consensus|conflict)/.test(q)) {
     const top = d.divergence.map((s) => `• ${s.title}: scores range ${s.min.toFixed(2)}–${s.max.toFixed(2)} (spread ${s.spread.toFixed(2)})`).join('\n')
-    return `Leadership disagrees most on:\n${top}\n\nThese are good candidates for the discussion threads before the round closes.`
+    return `Leadership disagrees most on:\n${top}\n\nSince Feasibility and Readiness are shared values, the spread is pure value/fit disagreement — good candidates for the discussion threads.`
   }
   if (/(velocity|cadence|sprint history|committed|completed)/.test(q)) {
     const last = d.velocity[d.velocity.length - 1]
@@ -133,6 +153,11 @@ function assistantAnswer(question, state) {
   if (/(who|submit|particip|waiting)/.test(q)) {
     const p = d.participation
     return `${p.submitted} of ${p.total} scoresheets are in (${p.submittedNames.join(', ')}). Still waiting on: ${p.waitingOn.join(', ') || 'no one'}.`
+  }
+  if (/(analy[sz]|awaiting|feasibility|readiness|facts)/.test(q)) {
+    return d.awaitingAnalysis
+      ? `${d.awaitingAnalysis} stories are still awaiting facilitator analysis (Feasibility/Readiness not yet set) — they can't produce a priority score until that's done.`
+      : 'All stories have facilitator-set Feasibility and Readiness values.'
   }
   if (/(carryover|carried|remaining|unfinished)/.test(q)) {
     const c = d.top10.filter((r) => r.carryoverFrom)
@@ -151,7 +176,7 @@ function assistantAnswer(question, state) {
   if (/(top|priorit|rank|list)/.test(q)) {
     return `Current top priorities (aggregate of submitted scoresheets):\n${fmt(d.top10.slice(0, 5))}`
   }
-  return 'I can analyze this round\'s data — try asking about: top priorities, where leadership disagrees, movers since last round, carryover items, velocity, portfolio distribution by business line, or who still needs to submit.'
+  return 'I can analyze this round\'s data — try asking about: top priorities, where leadership disagrees, movers since last round, carryover items, stories awaiting analysis, velocity, portfolio distribution, or who still needs to submit.'
 }
 
 export function handle(path, { method = 'GET', body } = {}) {
@@ -165,6 +190,7 @@ export function handle(path, { method = 'GET', body } = {}) {
       weights: WEIGHTS,
       epics: seed.epics,
       stories: seed.stories,
+      facts: factsMap(state),
       myScores: state.scores,
       myRanks: state.ranks,
       submission: state.submission,
@@ -173,21 +199,31 @@ export function handle(path, { method = 'GET', body } = {}) {
     }
   }
 
-  if (parts[0] === 'locks' && method === 'PUT') {
-    const id = Number(parts[1])
-    const unlocks = new Set(state.unlocks || [])
-    if (body.unlocked) unlocks.add(id)
-    else unlocks.delete(id)
-    state.unlocks = [...unlocks]
-    save(state)
-    return { ok: true, unlocks: state.unlocks }
-  }
-
   if (parts[0] === 'scores' && method === 'PUT') {
     const id = Number(parts[1])
     state.scores[id] = body
     save(state)
-    return { ok: true, priorityScore: priorityScore(body, WEIGHTS) }
+    return { ok: true }
+  }
+
+  if (parts[0] === 'facts' && method === 'PUT') {
+    const id = Number(parts[1])
+    state.factEdits[id] = { ...state.factEdits[id], ...body }
+    save(state)
+    return { ok: true, facts: factsMap(state)[id] }
+  }
+
+  if (parts[0] === 'rationales' && method === 'GET') {
+    const id = Number(parts[1])
+    const peer = (seed.rationales || []).filter((r) => r.workItemId === id)
+    const mine = []
+    const myScore = state.scores[id] || {}
+    for (const d of EXEC_DIMENSIONS) {
+      if (myScore[d.noteKey]) {
+        mine.push({ workItemId: id, author: USER.name, dimension: d.key, value: myScore[d.key] ?? null, note: myScore[d.noteKey] })
+      }
+    }
+    return [...peer, ...mine]
   }
 
   if (parts[0] === 'ranks' && method === 'PUT') {
@@ -218,6 +254,16 @@ export function handle(path, { method = 'GET', body } = {}) {
       save(state)
       return comment
     }
+  }
+
+  if (parts[0] === 'locks' && method === 'PUT') {
+    const id = Number(parts[1])
+    const unlocks = new Set(state.unlocks || [])
+    if (body.unlocked) unlocks.add(id)
+    else unlocks.delete(id)
+    state.unlocks = [...unlocks]
+    save(state)
+    return { ok: true, unlocks: state.unlocks }
   }
 
   if (parts[0] === 'dashboard') return dashboard(state)

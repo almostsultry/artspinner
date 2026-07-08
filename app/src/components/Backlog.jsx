@@ -3,11 +3,11 @@ import { priorityScore } from '../scoring.js'
 import StoryRow from './StoryRow.jsx'
 
 function EpicGroup({
-  epic, stories, scores, weights, onScore, onComment, onAdd, disabled,
+  epic, stories, scores, facts, weights, onScore, onComment, onAdd, disabled,
   lockedIds, currentSprint, onToggleLock,
 }) {
   const [open, setOpen] = useState(true)
-  const score = (s) => priorityScore(scores[s.id], weights)
+  const score = (s) => priorityScore(scores[s.id], facts[s.id], weights)
   const scored = stories.map(score).filter((v) => v !== null)
   const avg = scored.length ? (scored.reduce((a, b) => a + b, 0) / scored.length).toFixed(2) : null
   const sorted = [...stories].sort((a, b) => (score(b) ?? -1) - (score(a) ?? -1) || a.id - b.id)
@@ -25,7 +25,7 @@ function EpicGroup({
       </button>
       {open && sorted.map((story) => (
         <StoryRow
-          key={story.id} story={story} score={scores[story.id]} weights={weights}
+          key={story.id} story={story} score={scores[story.id]} facts={facts[story.id]} weights={weights}
           onScore={onScore} onComment={onComment} onAdd={onAdd} disabled={disabled}
           locked={lockedIds.has(story.id)} currentSprint={currentSprint} onToggleLock={onToggleLock}
         />
@@ -35,15 +35,16 @@ function EpicGroup({
 }
 
 export default function Backlog({
-  epics, stories, scores, weights, onScore, onComment, onAdd, disabled,
+  epics, stories, scores, facts, weights, onScore, onComment, onAdd, disabled,
   lockedIds, currentSprint, onToggleLock,
 }) {
   return (
     <section>
       <h2 className="section-title">Unprioritized backlog <span className="count-chip">{stories.length}</span></h2>
       <p className="view-note">
-        Grouped by Epic. Score each story 1–5 on the four dimensions (hover a label for its
-        criteria — drafts autosave), then <b>Prioritize</b> to add it to your numbered list above.
+        Grouped by Epic. Score <b>Business Value</b> and <b>Strategic Fit</b> 1–5 (hover a label
+        for its criteria — drafts autosave); Feasibility and Readiness are set by the facilitator
+        after analysis. Then <b>Prioritize</b> to add a story to your numbered list above.
         Current-sprint stories are locked; this round plans future sprints.
       </p>
       {epics.map((epic) => {
@@ -51,7 +52,7 @@ export default function Backlog({
         if (!epicStories.length) return null
         return (
           <EpicGroup
-            key={epic.id} epic={epic} stories={epicStories} scores={scores} weights={weights}
+            key={epic.id} epic={epic} stories={epicStories} scores={scores} facts={facts} weights={weights}
             onScore={onScore} onComment={onComment} onAdd={onAdd} disabled={disabled}
             lockedIds={lockedIds} currentSprint={currentSprint} onToggleLock={onToggleLock}
           />

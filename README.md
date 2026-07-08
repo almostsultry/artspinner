@@ -11,12 +11,20 @@ Entra ID auth · Dataverse persistence · Azure DevOps as the work-item source.
 - **Prioritize** — one screen, two sections. Top: the user's **sprint
   prioritization**, a flat numbered list with drag-grip reordering (epic shown
   as a tag on each row). Below: the **unprioritized backlog**, grouped by
-  Epic. Each row scores four dimensions 1–5 (Business Value, Feasibility,
-  Readiness, Strategic Fit) with a live weighted Priority Score (35/25/20/20);
-  fully-scored stories move up via "Prioritize". Drafts autosave; Submit
-  records the scoresheet for the open round (editable until the round closes).
-  Current-sprint items are locked — rounds plan future sprints — with a
-  per-item admin unlock.
+  Epic. Executives score only their judgment calls — Business Value and
+  Strategic Fit, 1–5 — while Feasibility and Readiness appear as read-only
+  facilitator-set facts; the weighted Priority Score (35/25/20/20) computes
+  live once both halves exist. Fully-scored stories move up via "Prioritize".
+  Drafts autosave; Submit records the scoresheet for the open round (editable
+  until the round closes). Current-sprint items are locked — rounds plan
+  future sprints — with a per-item admin unlock.
+- **Admin tab** — the facilitator's analysis surface: set shared Feasibility
+  and Readiness (with rationale) per story after consultative review; t-shirt
+  size suggests a feasibility starting point. Also: round open/close and
+  current-sprint unlock controls.
+- **Score rationales** — every score can carry a quantified "why" ("$2MM/yr
+  margin", "50% of 4 headcount weekly"), entered in the story sidecar, shown
+  as tooltips, and shared with the group next to the discussion thread.
 - **Discussion sidecar** — per-story threaded comments in a slide-out panel.
 - **Copilot sidecar** — a data-aware assistant that answers questions about
   the round (top priorities, divergence, movers, carryover, velocity,

@@ -23,7 +23,7 @@ function SortableRow(props) {
 }
 
 export default function PrioritizedList({
-  stories, scores, weights, onScore, onComment, onReorder, onRemove, disabled,
+  stories, scores, facts, weights, onScore, onComment, onReorder, onRemove, disabled,
   lockedIds, currentSprint, onToggleLock,
 }) {
   const sensors = useSensors(
@@ -54,7 +54,7 @@ export default function PrioritizedList({
             <SortableContext items={stories.map((s) => s.id)} strategy={verticalListSortingStrategy}>
               {stories.map((story, i) => (
                 <SortableRow
-                  key={story.id} story={story} score={scores[story.id]} weights={weights}
+                  key={story.id} story={story} score={scores[story.id]} facts={facts[story.id]} weights={weights}
                   rank={i} showEpic onScore={onScore} onComment={onComment}
                   disabled={disabled} locked={lockedIds.has(story.id)}
                   currentSprint={currentSprint} onToggleLock={onToggleLock}

@@ -2,7 +2,6 @@
 // DATA_MODE=live reads Azure DevOps and persists to Dataverse.
 const { app } = require('@azure/functions')
 const { getUser } = require('../shared/user')
-const { priorityScore } = require('../shared/scoring')
 const mockStore = require('../shared/mockStore')
 
 const live = () => (process.env.DATA_MODE || 'mock') === 'live'
@@ -18,16 +17,17 @@ function liveStore() {
       const [{ epics, stories }, round] = await Promise.all([ado.getWorkItems(), dv.currentRound()])
       if (!round) throw new Error('No open etc_round in Dataverse — create one or run seed-config.')
       const roundId = round.etc_roundid
-      const [scores, ranks] = await Promise.all([
+      const [scores, ranks, facts] = await Promise.all([
         dv.dv('GET', `/etc_scores?$filter=_etc_roundid_value eq ${roundId} and etc_userid eq '${user.id}'`),
         dv.dv('GET', `/etc_manualranks?$filter=_etc_roundid_value eq ${roundId} and etc_userid eq '${user.id}'&$orderby=etc_rank asc`),
+        dv.getFacts(roundId),
       ])
       const myScores = {}
       let submission = null
       for (const s of scores.value) {
         myScores[s.etc_workitemid] = {
-          businessValue: s.etc_businessvalue, feasibility: s.etc_feasibility,
-          readiness: s.etc_readiness, strategicFit: s.etc_strategicfit,
+          businessValue: s.etc_businessvalue, strategicFit: s.etc_strategicfit,
+          businessValueNote: s.etc_businessvaluenote, strategicFitNote: s.etc_strategicfitnote,
         }
         if (s.etc_submittedon) submission = { submittedAt: s.etc_submittedon }
       }
@@ -40,6 +40,7 @@ function liveStore() {
         },
         weights: require('../shared/scoring').WEIGHTS,
         epics, stories,
+        facts,
         myScores,
         myRanks: ranks.value.map((r) => r.etc_workitemid),
         submission,
@@ -49,8 +50,16 @@ function liveStore() {
     },
     async saveScore(user, workItemId, values) {
       const round = await dv.currentRound()
-      await dv.saveScore(round.etc_roundid, user, workItemId, values, priorityScore(values))
-      return { ok: true, priorityScore: priorityScore(values) }
+      await dv.saveScore(round.etc_roundid, user, workItemId, values)
+      return { ok: true }
+    },
+    async saveFacts(user, workItemId, patch) {
+      const round = await dv.currentRound()
+      return dv.saveFacts(round.etc_roundid, user, workItemId, patch)
+    },
+    async getRationales(user, workItemId) {
+      const round = await dv.currentRound()
+      return dv.getRationales(round.etc_roundid, workItemId)
     },
     async saveRanks(user, order) {
       const round = await dv.currentRound()
@@ -92,6 +101,20 @@ app.http('saveScore', {
   methods: ['PUT'], authLevel: 'anonymous', route: 'scores/{workItemId:int}',
   handler: json(async (req) =>
     store().saveScore(getUser(req), Number(req.params.workItemId), await req.json())),
+})
+
+app.http('saveFacts', {
+  methods: ['PUT'], authLevel: 'anonymous', route: 'facts/{workItemId:int}',
+  handler: json(async (req) => {
+    const user = getUser(req)
+    if (!user.isAdmin) return { error: 'Admin only — shared values are set by the facilitator' }
+    return store().saveFacts(user, Number(req.params.workItemId), await req.json())
+  }),
+})
+
+app.http('rationales', {
+  methods: ['GET'], authLevel: 'anonymous', route: 'rationales/{workItemId:int}',
+  handler: json((req) => store().getRationales(getUser(req), Number(req.params.workItemId))),
 })
 
 app.http('saveRanks', {

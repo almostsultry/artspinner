@@ -69,7 +69,18 @@ everything else is code in this repo.
 ## 5. Business rules encoded in the app
 
 - **Priority Score** = Business Value×35% + Feasibility×25% + Readiness×20% +
-  Strategic Fit×20% (weights in `etc_config/scoringWeights`).
+  Strategic Fit×20% (weights in `etc_config/scoringWeights`). Computed at read
+  time so facilitator updates are never stale.
+- **Split ownership of dimensions**: executives score only Business Value and
+  Strategic Fit (their judgment calls). Feasibility and Readiness are analyzed
+  facts set once per story by the facilitator in the Admin tab — following
+  business analysis and consultative review — and are read-only for
+  executives (`etc_storyfact`). T-shirt size suggests a feasibility default.
+  A story has no priority score until both halves exist.
+- **Score rationales**: every score (exec BV/SF and facilitator FE/RD) can
+  carry a free-text rationale ("$2MM/yr", "50% of 4 headcount weekly").
+  Entered in the story sidecar / Admin tab, shown as tooltips on the row, and
+  visible to all executives alongside the discussion thread.
 - **Sort order**: a user's manual drag-rank outranks score sort; score sort is
   the default.
 - **Scoring model**: individual scoresheets per executive, aggregated (mean)

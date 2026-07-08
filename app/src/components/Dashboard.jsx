@@ -165,7 +165,7 @@ export default function Dashboard() {
 
       <div className="card">
         <h3 className="card-title">Value vs feasibility</h3>
-        <p className="card-sub">Mean scores across scoresheets — top right is the quick-win quadrant</p>
+        <p className="card-sub">Mean executive Business Value vs facilitator-set Feasibility — top right is the quick-win quadrant</p>
         <ResponsiveContainer width="100%" height={260}>
           <ScatterChart margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
             <CartesianGrid stroke={INK.grid} />

@@ -1,9 +1,9 @@
 // Mock data source for the Functions API (DATA_MODE=mock). State lives in
 // process memory — it resets on cold start, which is fine for demo/review.
-// The live implementation (liveStore.js) persists to Dataverse instead.
+// The live implementation persists to Dataverse instead.
 const fs = require('fs')
 const path = require('path')
-const { WEIGHTS, priorityScore } = require('./scoring')
+const { EXEC_DIMENSIONS, WEIGHTS, priorityScore } = require('./scoring')
 
 function readSeed(name) {
   // Repo layout in dev; pipeline copies mock-data/ into api/ for deployment.
@@ -21,6 +21,7 @@ const NOT_SUBMITTED = ['Priya Nair', 'Tom Ovesen']
 
 // Per-user state, keyed by user id.
 const users = new Map()
+const factEdits = {}
 let roundStatus = seed.round.status
 let unlocks = new Set()
 let nextCommentId = 100
@@ -31,6 +32,15 @@ function userState(userId) {
   return users.get(userId)
 }
 
+// Facilitator-analyzed shared values: seed data overlaid with admin edits.
+function factsMap() {
+  const merged = {}
+  for (const s of seed.stories) {
+    merged[s.id] = { ...(seed.storyFacts?.[s.id] || {}), ...(factEdits[s.id] || {}) }
+  }
+  return merged
+}
+
 function peerValue(peerIdx, storyId, dimIdx) {
   let h = storyId * 73856093 + (peerIdx + 1) * 19349663 + (dimIdx + 1) * 83492791
   h = (h ^ (h >> 13)) * 1274126177
@@ -38,10 +48,9 @@ function peerValue(peerIdx, storyId, dimIdx) {
 }
 
 function peerScoresheet(peerIdx) {
-  const dims = Object.keys(WEIGHTS)
   const sheet = {}
   for (const s of seed.stories) {
-    sheet[s.id] = Object.fromEntries(dims.map((k, i) => [k, peerValue(peerIdx, s.id, i)]))
+    sheet[s.id] = Object.fromEntries(EXEC_DIMENSIONS.map((d, i) => [d.key, peerValue(peerIdx, s.id, i)]))
   }
   return sheet
 }
@@ -55,6 +64,7 @@ module.exports = {
       weights: WEIGHTS,
       epics: seed.epics,
       stories: seed.stories,
+      facts: factsMap(),
       myScores: state.scores,
       myRanks: state.ranks,
       submission: state.submission,
@@ -65,7 +75,24 @@ module.exports = {
 
   async saveScore(user, workItemId, values) {
     userState(user.id).scores[workItemId] = values
-    return { ok: true, priorityScore: priorityScore(values) }
+    return { ok: true }
+  },
+
+  async saveFacts(_user, workItemId, patch) {
+    factEdits[workItemId] = { ...factEdits[workItemId], ...patch }
+    return { ok: true, facts: factsMap()[workItemId] }
+  },
+
+  async getRationales(user, workItemId) {
+    const peer = (seed.rationales || []).filter((r) => r.workItemId === workItemId)
+    const mine = []
+    const myScore = userState(user.id).scores[workItemId] || {}
+    for (const d of EXEC_DIMENSIONS) {
+      if (myScore[d.noteKey]) {
+        mine.push({ workItemId, author: user.name, dimension: d.key, value: myScore[d.key] ?? null, note: myScore[d.noteKey] })
+      }
+    }
+    return [...peer, ...mine]
   },
 
   async saveRanks(user, order) {
@@ -103,6 +130,7 @@ module.exports = {
   },
 
   async dashboard() {
+    const facts = factsMap()
     const carryoverIds = new Map((seed.carryover || []).map((c) => [c.workItemId, c.fromSprint]))
     const sheets = PEERS.map((_, i) => peerScoresheet(i))
     for (const state of users.values()) if (state.submission) sheets.push(state.scores)
@@ -114,7 +142,7 @@ module.exports = {
     const stats = seed.stories
       .map((story) => {
         const entries = sheets.map((sheet) => sheet[story.id]).filter(Boolean)
-        const ps = entries.map((e) => priorityScore(e)).filter((v) => v !== null)
+        const ps = entries.map((e) => priorityScore(e, facts[story.id])).filter((v) => v !== null)
         return {
           ...story,
           score: round2(mean(ps)),
@@ -122,7 +150,7 @@ module.exports = {
           max: ps.length ? Math.max(...ps) : null,
           spread: ps.length ? round2(Math.max(...ps) - Math.min(...ps)) : null,
           bv: round2(mean(entries.map((e) => e.businessValue).filter(Boolean))),
-          fe: round2(mean(entries.map((e) => e.feasibility).filter(Boolean))),
+          fe: facts[story.id]?.feasibility ?? null,
         }
       })
       .filter((s) => s.score !== null)
@@ -164,6 +192,8 @@ module.exports = {
         .map((m) => ({ ...m, delta: m.from - m.to }))
         .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
         .slice(0, 6),
+      awaitingAnalysis: seed.stories.length - Object.values(facts)
+        .filter((f) => f.feasibility >= 1 && f.readiness >= 1).length,
       participation: {
         submitted: PEERS.length + submittedUsers,
         total: PEERS.length + NOT_SUBMITTED.length + 1,

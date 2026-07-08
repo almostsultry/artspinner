@@ -47,15 +47,16 @@ async function currentRound() {
   return r.value[0] || null
 }
 
-async function saveScore(roundId, user, workItemId, values, priorityScore) {
+async function saveScore(roundId, user, workItemId, values) {
   const existing = await dv('GET',
     `/etc_scores?$filter=_etc_roundid_value eq ${roundId} and etc_userid eq '${user.id}' and etc_workitemid eq ${workItemId}&$top=1`)
+  // Priority score is computed at read time from exec inputs + shared facts,
+  // so it's never stale when the facilitator updates Feasibility/Readiness.
   const record = {
     etc_businessvalue: values.businessValue ?? null,
-    etc_feasibility: values.feasibility ?? null,
-    etc_readiness: values.readiness ?? null,
     etc_strategicfit: values.strategicFit ?? null,
-    etc_priorityscore: priorityScore,
+    etc_businessvaluenote: values.businessValueNote ?? null,
+    etc_strategicfitnote: values.strategicFitNote ?? null,
   }
   if (existing.value.length) {
     await dv('PATCH', `/etc_scores(${existing.value[0].etc_scoreid})`, record)
@@ -98,6 +99,58 @@ async function markSubmitted(roundId, user) {
   return { submittedAt }
 }
 
+// Shared per-story facts (Feasibility/Readiness + rationale), admin-set.
+async function getFacts(roundId) {
+  const rows = await dv('GET', `/etc_storyfacts?$filter=_etc_roundid_value eq ${roundId}`)
+  const map = {}
+  for (const f of rows.value) {
+    map[f.etc_workitemid] = {
+      feasibility: f.etc_feasibility, readiness: f.etc_readiness,
+      feasibilityNote: f.etc_feasibilitynote, readinessNote: f.etc_readinessnote,
+    }
+  }
+  return map
+}
+
+async function saveFacts(roundId, user, workItemId, patch) {
+  const record = {}
+  if ('feasibility' in patch) record.etc_feasibility = patch.feasibility
+  if ('readiness' in patch) record.etc_readiness = patch.readiness
+  if ('feasibilityNote' in patch) record.etc_feasibilitynote = patch.feasibilityNote
+  if ('readinessNote' in patch) record.etc_readinessnote = patch.readinessNote
+  const existing = await dv('GET',
+    `/etc_storyfacts?$filter=_etc_roundid_value eq ${roundId} and etc_workitemid eq ${workItemId}&$top=1`)
+  if (existing.value.length) {
+    await dv('PATCH', `/etc_storyfacts(${existing.value[0].etc_storyfactid})`, record)
+  } else {
+    await dv('POST', '/etc_storyfacts', {
+      ...record,
+      etc_name: `${workItemId}`,
+      etc_workitemid: workItemId,
+      etc_userid: user.id,
+      etc_username: user.name,
+      'etc_RoundId@odata.bind': `/etc_rounds(${roundId})`,
+    })
+  }
+  return { ok: true }
+}
+
+// All executives' score rationale notes for one work item.
+async function getRationales(roundId, workItemId) {
+  const rows = await dv('GET',
+    `/etc_scores?$filter=_etc_roundid_value eq ${roundId} and etc_workitemid eq ${workItemId}`)
+  const out = []
+  for (const s of rows.value) {
+    if (s.etc_businessvaluenote) {
+      out.push({ workItemId, author: s.etc_username, dimension: 'businessValue', value: s.etc_businessvalue, note: s.etc_businessvaluenote })
+    }
+    if (s.etc_strategicfitnote) {
+      out.push({ workItemId, author: s.etc_username, dimension: 'strategicFit', value: s.etc_strategicfit, note: s.etc_strategicfitnote })
+    }
+  }
+  return out
+}
+
 async function getComments(workItemId) {
   const rows = await dv('GET',
     `/etc_comments?$filter=etc_workitemid eq ${workItemId}&$orderby=createdon asc`)
@@ -117,4 +170,7 @@ async function postComment(user, workItemId, text) {
   return { id: c.etc_commentid, workItemId, author: user.name, postedAt: c.createdon, text }
 }
 
-module.exports = { currentRound, saveScore, saveRanks, markSubmitted, getComments, postComment, OPT, dv }
+module.exports = {
+  currentRound, saveScore, saveRanks, markSubmitted, getComments, postComment,
+  getFacts, saveFacts, getRationales, OPT, dv,
+}
