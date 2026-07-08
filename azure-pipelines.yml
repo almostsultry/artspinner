@@ -1,0 +1,63 @@
+# Azure Pipelines: build + deploy the app to Azure Static Web Apps, with an
+# optional stage that packs and imports the managed Dataverse solution.
+#
+# Pipeline variables to set (Library or pipeline UI, secrets where noted):
+#   SWA_DEPLOYMENT_TOKEN   (secret)  — from the Static Web App resource
+#   DEPLOY_SOLUTION        'true' to run the Dataverse solution stage
+#   PP_SERVICE_CONNECTION  — Power Platform service connection name (solution stage)
+
+trigger:
+  branches:
+    include: [main]
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - stage: Build
+    jobs:
+      - job: build_and_test
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '20.x'
+          - script: npm ci
+            workingDirectory: app
+            displayName: Install app dependencies
+          - script: npm run build
+            workingDirectory: app
+            displayName: Build app
+          - script: npm ci --omit=dev
+            workingDirectory: api
+            displayName: Install API dependencies
+          # Mock data ships inside the API package so DATA_MODE=mock works in the cloud.
+          - script: cp -r mock-data api/mock-data
+            displayName: Bundle mock data with API
+
+          - task: AzureStaticWebApp@0
+            displayName: Deploy to Static Web Apps
+            inputs:
+              app_location: app
+              output_location: dist
+              api_location: api
+              config_file_location: /
+              azure_static_web_apps_api_token: $(SWA_DEPLOYMENT_TOKEN)
+
+  - stage: DataverseSolution
+    displayName: Pack & import managed solution
+    dependsOn: Build
+    condition: and(succeeded(), eq(variables['DEPLOY_SOLUTION'], 'true'))
+    jobs:
+      - job: solution
+        steps:
+          - task: PowerPlatformToolInstaller@2
+          - task: PowerPlatformPackSolution@2
+            inputs:
+              SolutionSourceFolder: solution/src
+              SolutionOutputFile: $(Build.ArtifactStagingDirectory)/ExecPrioritization_managed.zip
+              SolutionType: Managed
+          - task: PowerPlatformImportSolution@2
+            inputs:
+              authenticationType: PowerPlatformSPN
+              PowerPlatformSPN: $(PP_SERVICE_CONNECTION)
+              SolutionInputFile: $(Build.ArtifactStagingDirectory)/ExecPrioritization_managed.zip

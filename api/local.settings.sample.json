@@ -1,0 +1,25 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "DATA_MODE": "mock",
+
+    "TENANT_ID": "<entra-tenant-guid>",
+    "DV_URL": "https://<org>.crm.dynamics.com",
+    "DV_CLIENT_ID": "<app-registration-client-id>",
+    "DV_CLIENT_SECRET": "<app-registration-secret>",
+
+    "ADO_ORG_URL": "https://dev.azure.com/<organization>",
+    "ADO_PROJECT": "<project>",
+    "ADO_PAT": "<personal-access-token-or-use-service-principal>",
+    "ADO_FIELD_BUSINESS_LINE": "Custom.BusinessLine",
+    "ADO_FIELD_TSHIRT_SIZE": "Custom.TShirtSize",
+    "ADO_IN_SCOPE_STATES": "Open,Discovery,Ready for Development",
+
+    "ADMIN_USER_IDS": "<comma-separated-entra-object-ids>",
+
+    "AZURE_OPENAI_ENDPOINT": "<optional: https://<resource>.openai.azure.com — enables LLM answers in the Copilot sidecar>",
+    "AZURE_OPENAI_KEY": "<optional>",
+    "AZURE_OPENAI_DEPLOYMENT": "<optional: deployment name>"
+  }
+}

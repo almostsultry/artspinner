@@ -1,0 +1,24 @@
+{
+  "velocity": [
+    { "sprint": "Sprint 36", "committed": 42, "completed": 34 },
+    { "sprint": "Sprint 37", "committed": 40, "completed": 38 },
+    { "sprint": "Sprint 38", "committed": 45, "completed": 41 },
+    { "sprint": "Sprint 39", "committed": 44, "completed": 44 },
+    { "sprint": "Sprint 40", "committed": 48, "completed": 43 },
+    { "sprint": "Sprint 41", "committed": 46, "completed": 45 }
+  ],
+  "sprints": [
+    {
+      "name": "Sprint 42", "label": "Current", "start": "2026-07-01", "end": "2026-07-14",
+      "plannedPoints": 46, "completedPoints": 21, "capacityDays": 118, "stories": 12, "focus": "Field Service Mobility"
+    },
+    {
+      "name": "Sprint 43", "label": "Next", "start": "2026-07-15", "end": "2026-07-28",
+      "plannedPoints": 44, "completedPoints": 0, "capacityDays": 110, "stories": 11, "focus": "CRM Lead-to-Quote"
+    },
+    {
+      "name": "Sprint 44", "label": "Next +1", "start": "2026-07-29", "end": "2026-08-11",
+      "plannedPoints": 40, "completedPoints": 0, "capacityDays": 96, "stories": 9, "focus": "Capacity reduced — plant shutdown week"
+    }
+  ]
+}

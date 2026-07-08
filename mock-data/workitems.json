@@ -1,0 +1,262 @@
+{
+  "round": {
+    "id": "round-2026-07",
+    "name": "July 2026 Prioritization",
+    "targetSprint": "Sprint 43",
+    "status": "Open",
+    "opensOn": "2026-07-01",
+    "closesOn": "2026-07-14",
+    "currentSprint": "Sprint 42"
+  },
+  "epics": [
+    {
+      "id": 101,
+      "title": "ERP General Ledger Consolidation",
+      "businessLine": "Corporate"
+    },
+    {
+      "id": 102,
+      "title": "Dealer Management System Replacement",
+      "businessLine": "Machine Sales"
+    },
+    {
+      "id": 103,
+      "title": "CRM Lead-to-Quote Modernization",
+      "businessLine": "Machine Sales"
+    },
+    {
+      "id": 104,
+      "title": "Field Service Mobility",
+      "businessLine": "Product Support"
+    },
+    {
+      "id": 105,
+      "title": "Parts Inventory Optimization",
+      "businessLine": "Product Support"
+    },
+    {
+      "id": 106,
+      "title": "Rental Fleet Telematics Integration",
+      "businessLine": "Rental"
+    },
+    {
+      "id": 107,
+      "title": "AI Platform Foundation",
+      "businessLine": "Corporate"
+    },
+    {
+      "id": 108,
+      "title": "Power Systems Quoting & Configurator",
+      "businessLine": "Power Systems"
+    }
+  ],
+  "stories": [
+    {
+      "id": 201,
+      "epicId": 101,
+      "title": "Automate month-end journal entry imports",
+      "summary": "Replace the manual CSV upload of intercompany journal entries with a scheduled integration from the legacy GL, cutting month-end close by an estimated two days.",
+      "businessLine": "Corporate",
+      "tshirtSize": "M",
+      "state": "Ready for Development",
+      "sprint": null
+    },
+    {
+      "id": 202,
+      "epicId": 101,
+      "title": "Chart of accounts mapping workbench",
+      "summary": "Give finance a UI to map legacy account codes to the new consolidated chart of accounts, with validation rules and an audit log of mapping changes.",
+      "businessLine": "Corporate",
+      "tshirtSize": "L",
+      "state": "Discovery",
+      "sprint": null
+    },
+    {
+      "id": 203,
+      "epicId": 102,
+      "title": "Unified customer master record",
+      "summary": "Consolidate duplicate customer records across the DMS, CRM, and billing systems into a single golden record with survivorship rules.",
+      "businessLine": "Machine Sales",
+      "tshirtSize": "XL",
+      "state": "Discovery",
+      "sprint": null
+    },
+    {
+      "id": 204,
+      "epicId": 102,
+      "title": "Machine sales order status portal",
+      "summary": "Customer-facing view of machine order status from factory order through delivery, pulling build and shipping milestones from the DMS.",
+      "businessLine": "Machine Sales",
+      "tshirtSize": "L",
+      "state": "Open",
+      "sprint": null
+    },
+    {
+      "id": 205,
+      "epicId": 103,
+      "title": "Lead scoring and routing rules",
+      "summary": "Score inbound web and event leads on fit and intent, then auto-route to the right territory rep with an SLA timer and escalation.",
+      "businessLine": "Machine Sales",
+      "tshirtSize": "M",
+      "state": "Ready for Development",
+      "sprint": null
+    },
+    {
+      "id": 206,
+      "epicId": 103,
+      "title": "Quote approval workflow with discount guardrails",
+      "summary": "Multi-level quote approvals driven by discount depth and deal size, replacing email approvals; includes margin visibility for approvers.",
+      "businessLine": "Machine Sales",
+      "tshirtSize": "M",
+      "state": "Ready for Development",
+      "sprint": null
+    },
+    {
+      "id": 207,
+      "epicId": 104,
+      "title": "Offline work order completion for field techs",
+      "summary": "Let field technicians complete work orders, capture photos, and record parts used without connectivity, syncing when back in coverage.",
+      "businessLine": "Product Support",
+      "tshirtSize": "L",
+      "state": "Ready for Development",
+      "sprint": "Sprint 42"
+    },
+    {
+      "id": 208,
+      "epicId": 104,
+      "title": "Technician schedule board with drag-and-drop dispatch",
+      "summary": "Dispatcher view showing tech availability, skills, and travel time; drag jobs between techs and days with conflict warnings.",
+      "businessLine": "Product Support",
+      "tshirtSize": "M",
+      "state": "Discovery",
+      "sprint": null
+    },
+    {
+      "id": 209,
+      "epicId": 105,
+      "title": "Parts demand forecasting pilot",
+      "summary": "Forecast fast-moving parts demand per branch using 24 months of sales history and seasonality; measure against current min/max stocking.",
+      "businessLine": "Product Support",
+      "tshirtSize": "L",
+      "state": "Discovery",
+      "sprint": null
+    },
+    {
+      "id": 210,
+      "epicId": 105,
+      "title": "Emergency parts order expedite tracking",
+      "summary": "Track expedited parts orders end-to-end with carrier milestones and proactive customer notifications on delays.",
+      "businessLine": "Product Support",
+      "tshirtSize": "S",
+      "state": "Open",
+      "sprint": "Sprint 42"
+    },
+    {
+      "id": 211,
+      "epicId": 106,
+      "title": "Rental unit utilization dashboard",
+      "summary": "Hours, idle days, and revenue per rental asset from telematics feeds, rolled up by branch and product family.",
+      "businessLine": "Rental",
+      "tshirtSize": "M",
+      "state": "Ready for Development",
+      "sprint": null
+    },
+    {
+      "id": 212,
+      "epicId": 106,
+      "title": "Automated off-rent inspection checklist",
+      "summary": "Digital inspection at off-rent with photo capture and automatic damage billing draft, replacing the paper tri-form.",
+      "businessLine": "Rental",
+      "tshirtSize": "S",
+      "state": "Open",
+      "sprint": null
+    },
+    {
+      "id": 213,
+      "epicId": 107,
+      "title": "Enterprise data lakehouse landing zone",
+      "summary": "Stand up the governed landing zone (storage, catalog, access model) that ERP, CRM, and telematics data will flow into — the foundation for all AI use cases.",
+      "businessLine": "Corporate",
+      "tshirtSize": "XL",
+      "state": "Discovery",
+      "sprint": null
+    },
+    {
+      "id": 214,
+      "epicId": 107,
+      "title": "Service call summarization assistant pilot",
+      "summary": "LLM-assisted summarization of service call notes into structured cause/correction codes, piloted with one branch's service writers.",
+      "businessLine": "Corporate",
+      "tshirtSize": "M",
+      "state": "Discovery",
+      "sprint": null
+    },
+    {
+      "id": 215,
+      "epicId": 108,
+      "title": "Generator sizing calculator integration",
+      "summary": "Embed the OEM generator sizing tool into the quoting flow so spec data flows straight into the quote instead of being rekeyed.",
+      "businessLine": "Power Systems",
+      "tshirtSize": "M",
+      "state": "Open",
+      "sprint": null
+    },
+    {
+      "id": 216,
+      "epicId": 108,
+      "title": "Standby power maintenance agreement renewals",
+      "summary": "Automate renewal quotes for expiring standby generator maintenance agreements with indexed pricing and one-click acceptance.",
+      "businessLine": "Power Systems",
+      "tshirtSize": "S",
+      "state": "Open",
+      "sprint": null
+    }
+  ],
+  "comments": [
+    {
+      "id": 1,
+      "workItemId": 213,
+      "author": "Dana Whitfield",
+      "postedAt": "2026-07-02T14:12:00Z",
+      "text": "Everything in the AI epic is blocked until this lands. I'd argue this is top 3 regardless of its own revenue story."
+    },
+    {
+      "id": 2,
+      "workItemId": 213,
+      "author": "Marcus Lee",
+      "postedAt": "2026-07-02T16:40:00Z",
+      "text": "Agree on sequencing, but it's an XL — does it crowd out everything else for two sprints?"
+    },
+    {
+      "id": 3,
+      "workItemId": 209,
+      "author": "Dana Whitfield",
+      "postedAt": "2026-07-03T09:05:00Z",
+      "text": "Parts margin impact here is the strongest business case we have on paper. Feasibility hinges on branch data quality."
+    }
+  ],
+  "carryover": [
+    {
+      "workItemId": 207,
+      "fromSprint": "Sprint 42"
+    },
+    {
+      "workItemId": 210,
+      "fromSprint": "Sprint 42"
+    }
+  ],
+  "previousRanks": {
+    "201": 11,
+    "203": 3,
+    "204": 12,
+    "205": 6,
+    "206": 8,
+    "207": 4,
+    "209": 2,
+    "210": 7,
+    "211": 9,
+    "213": 1,
+    "214": 5,
+    "215": 10
+  }
+}
